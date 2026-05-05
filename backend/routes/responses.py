@@ -16,7 +16,7 @@ GET    /responses/session/{token} — find in-progress response by session_token
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
-
+from core.rate_limiter import limiter
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
@@ -49,6 +49,7 @@ def _load_response(response_id: uuid.UUID, db: Session) -> SurveyResponse:
 # ── Create ────────────────────────────────────────────────────────────────────
 
 @router.post("/", response_model=ResponseOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def create_response(body: ResponseCreate, db: Session = Depends(get_db)):
     """
     Create a new in-progress response row.
@@ -84,6 +85,7 @@ def create_response(body: ResponseCreate, db: Session = Depends(get_db)):
 # ── Get by session token ──────────────────────────────────────────────────────
 
 @router.get("/session/{token}", response_model=Optional[ResponseOut])
+@limiter.limit("20/minute")
 def get_response_by_session(token: str, db: Session = Depends(get_db)):
     """
     Lookup an existing in-progress response by session_token.
@@ -143,6 +145,8 @@ def update_response(
 # ── Upsert answers (auto-save) ────────────────────────────────────────────────
 
 @router.post("/{response_id}/answers")
+@limiter.limit("30/minute")
+
 def upsert_answers(
     response_id: uuid.UUID,
     answers: List[AnswerIn],
@@ -184,6 +188,8 @@ def upsert_answers(
 # ── Submit ────────────────────────────────────────────────────────────────────
 
 @router.post("/{response_id}/submit")
+@limiter.limit("5/minute")
+
 def submit_response(
     response_id: uuid.UUID,
     body: dict = {},
@@ -212,6 +218,8 @@ def submit_response(
 # ── Mark as abandoned ─────────────────────────────────────────────────────────
 
 @router.post("/{response_id}/abandon")
+@limiter.limit("10/minute")
+
 def abandon_response(
     response_id: uuid.UUID,
     body: dict = {},

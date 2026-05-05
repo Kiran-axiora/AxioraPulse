@@ -8,7 +8,7 @@ GET /dashboard/recent  — Last 6 surveys with response counts
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-
+from core.rate_limiter import limiter
 from db.database import get_db
 from db.models import Survey, SurveyResponse, UserProfile, ResponseStatusEnum, SurveyStatusEnum
 from schemas import DashboardStats, RecentSurvey
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/stats", response_model=DashboardStats)
+@limiter.limit("30/minute")
 def dashboard_stats(
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -74,6 +75,7 @@ def dashboard_stats(
 
 
 @router.get("/recent")
+@limiter.limit("30/minute")
 def recent_surveys(
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -114,6 +116,7 @@ def recent_surveys(
 
 
 @router.get("/feed")
+@limiter.limit("20/minute")
 def dashboard_feed(
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),

@@ -13,9 +13,13 @@ GET    /users/{id}      — Get single user profile
 import uuid
 import secrets
 import os
+from schemas import BulkInviteRequest
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from services.email_service import send_email
+from slowapi.util import get_remote_address
 
+from core.rate_limiter import limiter
 from db.database import get_db
 from db.models import UserProfile, RoleEnum
 from schemas import (
@@ -65,30 +69,64 @@ def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     return UserProfileOut.model_validate(user)
 
-
-@router.post("/invite", response_model=UserProfileOut, status_code=status.HTTP_201_CREATED)
+@router.post("/invite", response_model=UserProfileOut, status_code=status.HTTP_200_OK)
+@limiter.limit("3/minute")
 def invite_user(
     body: InviteRequest,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Create a placeholder UserProfile with account_status='invited'.
-    In the original app, Netlify's invite-user function sent a magic-link email.
-    Here we create the record; email delivery should be wired separately
-    (e.g. FastAPI-Mail / SendGrid). The invited user sets their password via
-    PATCH /users/{id}/accept-invite.
+    Invite or re-invite a user.
+
+    - New user → create + send email
+    - Already invited → resend email
+    - Already active → block
     """
     _require_manager(current_user)
 
-    # Check duplicate in same tenant
+    # 🔍 Check if user already exists
     existing = db.query(UserProfile).filter(
         UserProfile.email == body.email,
         UserProfile.tenant_id == current_user.tenant_id,
     ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="User with this email already exists in your team")
 
+    # 🟡 CASE 1: Already exists
+    if existing:
+        if existing.account_status == "invited":
+            # 🔁 RESEND INVITE
+
+            # Generate new token (recommended)
+            existing.invite_token = secrets.token_urlsafe(32)
+            db.commit()
+            db.refresh(existing)
+
+            invite_link = f"http://localhost:5173/accept-invite/{existing.invite_token}"
+
+            try:
+                send_email(
+                    to_email=existing.email,
+                    subject="You're invited to Axiora Pulse 🚀 (Reminder)",
+                    body=f"""
+                    <h3>Hello {existing.full_name or 'User'},</h3>
+                    <p>This is a reminder to join Axiora Pulse.</p>
+                    <p>Click below to accept your invite:</p>
+                    <a href="{invite_link}">Accept Invite</a>
+                    """
+                )
+            except Exception as e:
+                print("Email failed:", str(e))
+
+            return UserProfileOut.model_validate(existing)
+
+        else:
+            # 🔴 Already active user
+            raise HTTPException(
+                status_code=400,
+                detail="User already exists in your team"
+            )
+
+    # 🟢 CASE 2: New user → create
     try:
         role = RoleEnum(body.role)
     except ValueError:
@@ -98,20 +136,123 @@ def invite_user(
         id=uuid.uuid4(),
         email=body.email,
         full_name=body.full_name,
-        password_hash=None,  # set on accept-invite
+        password_hash=None,
         role=role,
         tenant_id=current_user.tenant_id,
         is_active=True,
         account_status="invited",
         invite_token=secrets.token_urlsafe(32),
     )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
+    invite_link = f"http://localhost:5173/accept-invite/{new_user.invite_token}"
+
+    try:
+        send_email(
+            to_email=new_user.email,
+            subject="You're invited to Nexora Pulse 🚀",
+            body=f"""
+            <h3>Hello {new_user.full_name or 'User'},</h3>
+            <p>You have been invited to join Nexora Pulse.</p>
+            <p>Click below to accept your invite:</p>
+            <a href="{invite_link}">Accept Invite</a>
+            """
+        )
+    except Exception as e:
+        print("Email failed:", str(e))
 
     return UserProfileOut.model_validate(new_user)
 
+import time
+
+@router.post("/bulk-invite")
+@limiter.limit("2/minute")
+def bulk_invite(
+    body: BulkInviteRequest,
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_manager(current_user)
+
+    results = []
+
+    for email in body.emails:
+
+        existing = db.query(UserProfile).filter(
+            UserProfile.email == email,
+            UserProfile.tenant_id == current_user.tenant_id,
+        ).first()
+
+        # 🔁 Already invited → resend
+        if existing and existing.account_status == "invited":
+
+            existing.invite_token = secrets.token_urlsafe(32)
+            db.commit()
+            db.refresh(existing)
+
+            invite_link = f"http://localhost:5173/accept-invite/{existing.invite_token}"
+
+            try:
+                send_email(
+                    to_email=email,
+                    subject="You're invited (Reminder) 🚀",
+                    body=f"""
+                    <h3>Hello {existing.full_name or 'User'},</h3>
+                    <p>This is a reminder to join Axiora Pulse.</p>
+                    <a href="{invite_link}">Accept Invite</a>
+                    """
+                )
+                results.append({"email": email, "status": "resent"})
+            except Exception:
+                results.append({"email": email, "status": "failed"})
+
+            time.sleep(1)
+            continue
+
+        # ❌ Already active
+        if existing:
+            results.append({"email": email, "status": "already exists"})
+            continue
+
+        # 🆕 New user
+        new_user = UserProfile(
+            id=uuid.uuid4(),
+            email=email,
+            full_name=None,
+            password_hash=None,
+            role=RoleEnum(body.role),
+            tenant_id=current_user.tenant_id,
+            is_active=True,
+            account_status="invited",
+            invite_token=secrets.token_urlsafe(32),
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        invite_link = f"http://localhost:5173/accept-invite/{new_user.invite_token}"
+
+        try:
+            send_email(
+                to_email=email,
+                subject="You're invited 🚀",
+                body=f"""
+                <h3>Hello,</h3>
+                <p>You are invited to Axiora Pulse.</p>
+                <a href="{invite_link}">Accept Invite</a>
+                """
+            )
+            results.append({"email": email, "status": "sent"})
+        except Exception:
+            results.append({"email": email, "status": "failed"})
+
+        time.sleep(1)  # ⚠️ prevent Gmail blocking
+
+    return {"results": results}
 
 @router.patch("/{user_id}/role", response_model=UserProfileOut)
 def update_role(

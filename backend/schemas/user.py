@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
+from typing import List
+from pydantic import EmailStr
 
 class UserProfileOut(BaseModel):
     id: UUID
@@ -29,3 +31,8 @@ class UserRoleUpdate(BaseModel):
 
 class UserStatusUpdate(BaseModel):
     is_active: bool
+
+
+class BulkInviteRequest(BaseModel):
+    emails: List[EmailStr]
+    role: str = "viewer"

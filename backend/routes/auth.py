@@ -15,8 +15,10 @@ import os
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-
+from fastapi import Request
+from core.rate_limiter import limiter
 from db.database import get_db
 from db.models import Tenant, UserProfile, RoleEnum
 from schemas import (
@@ -25,9 +27,15 @@ from schemas import (
     MessageResponse,
 )
 from auth_utils import hash_password, verify_password, create_access_token
+from auth_utils import create_refresh_token
 from dependencies import get_current_user
+from jose import jwt, JWTError
+from fastapi import Body
+from fastapi import Header
 
-
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+security = HTTPBearer()
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -58,15 +66,21 @@ def _build_auth_response(user: UserProfile, db: Session) -> dict:
     tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first() if user.tenant_id else None
     profile_out = UserProfileOut.model_validate(user)
     tenant_out  = TenantOut.model_validate(tenant) if tenant else None
-    token = create_access_token({
+    access_token = create_access_token({
         "sub": str(user.id),
         "email": user.email,
         "full_name": user.full_name,
         "role": user.role.value if user.role else "viewer",
         "tenant_id": str(user.tenant_id) if user.tenant_id else None,
     })
+    refresh_token = create_refresh_token({
+        "sub": str(user.id),
+        "email": user.email,
+        "type": "refresh"   # 🔥 IMPORTANT
+    })
     return {
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": profile_out,
         "profile": profile_out,
@@ -77,7 +91,8 @@ def _build_auth_response(user: UserProfile, db: Session) -> dict:
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
     """
     Register a new organisation.
     Creates:
@@ -118,7 +133,8 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate with email + password.
     Returns JWT and user/profile/tenant data.
@@ -135,7 +151,40 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     return _build_auth_response(user, db)
 
 
+@router.post("/refresh")
+@limiter.limit("10/minute")
+def refresh_access_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    try:
+        # ✅ Get token correctly from HTTPBearer
+        token = credentials.credentials
+
+        # ✅ Decode token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # ✅ Validate token type
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        # ✅ Create new access token
+        new_access = create_access_token({
+            "sub": payload.get("sub"),
+            "email": payload.get("email")
+        })
+
+        return {"access_token": new_access}
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    except Exception as e:
+        # 🔥 This helps you debug instead of silent 500
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/me", response_model=MeResponse)
+@limiter.limit("30/minute")
 def me(current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Return the authenticated user's profile and tenant.
@@ -154,6 +203,7 @@ def me(current_user: UserProfile = Depends(get_current_user), db: Session = Depe
 
 
 @router.patch("/me/profile", response_model=UserProfileOut)
+@limiter.limit("20/minute")
 def update_profile(
     body: UserProfileUpdate,
     current_user: UserProfile = Depends(get_current_user),
@@ -168,6 +218,7 @@ def update_profile(
 
 
 @router.patch("/me/password", response_model=MessageResponse)
+@limiter.limit("5/minute")
 def change_password(
     body: PasswordUpdate,
     current_user: UserProfile = Depends(get_current_user),

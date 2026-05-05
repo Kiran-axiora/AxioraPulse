@@ -9,9 +9,10 @@ import json
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-import google.generativeai as genai
+from google import genai
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
+from core.rate_limiter import limiter
 
 from sqlalchemy.orm import Session, joinedload
 from db.database import get_db
@@ -103,6 +104,7 @@ def _build_survey_context(survey_id: str, db: Session) -> dict:
     }
 
 @router.get("/surveys/{survey_id}/insights", response_model=AIInsightsResponse)
+@limiter.limit("3/minute")
 async def generate_survey_insights(
     survey_id: str,
     db: Session = Depends(get_db),
@@ -124,6 +126,7 @@ async def generate_survey_insights(
 
 
 @router.post("/insights", response_model=AIInsightsResponse)
+@limiter.limit("3/minute")
 async def generate_insights(
     body: AIInsightsRequest,
     current_user: UserProfile = Depends(get_current_user)
@@ -195,6 +198,7 @@ async def generate_insights(
 
 
 @router.post("/suggestions", response_model=AISuggestionsResponse)
+@limiter.limit("5/minute")
 async def generate_suggestions(
     body: AISuggestionsRequest,
     current_user: UserProfile = Depends(get_current_user)

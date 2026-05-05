@@ -31,7 +31,11 @@ from routes.feedback  import router as feedback_router
 from routes.dashboard import router as dashboard_router
 from routes.utils     import router as utils_router
 from routes.ai        import router as ai_router
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from fastapi.responses import JSONResponse
 
+from core.rate_limiter import limiter
 
 # ── Create tables ─────────────────────────────────────────────────────────────
 # In production, replace this with Alembic migrations.
@@ -46,7 +50,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
-
+# ── Rate Limiter ─────────────────────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 # Use wildcard origins and disable credentials for maximum development compatibility.
@@ -59,7 +65,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please slow down."},
+    )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router)
