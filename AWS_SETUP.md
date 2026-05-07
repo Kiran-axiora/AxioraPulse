@@ -3,9 +3,12 @@
 Complete one-time AWS setup for deploying frontend and backend to ECS Fargate.  
 **Region:** `ap-south-1` (Mumbai) | **Account:** `217757579310`
 
+> **No domain yet?** Follow the **No Domain** checklist below.  
+> Steps 13–15 and 20 are different — skip ACM/SSL and use two separate ALBs instead.
+
 ---
 
-## Checklist
+## Checklist — With Domain
 
 ```
 [ ] 1.  IAM — ecsTaskExecutionRole
@@ -20,7 +23,7 @@ Complete one-time AWS setup for deploying frontend and backend to ECS Fargate.
 [ ] 10. ECS — axiora-pulse-cluster
 [ ] 11. ALB — pulse-backend-tg target group
 [ ] 12. ALB — pulse-frontend-tg target group
-[ ] 13. ALB — axiora-pulse-alb load balancer
+[ ] 13. ALB — axiora-pulse-alb (single ALB, host-based routing)
 [ ] 14. ACM — SSL certificate for app.* and api.*
 [ ] 15. ALB — HTTPS listener + backend host-based rule
 [ ] 16. ECS — Register task definitions (CLI)
@@ -28,8 +31,36 @@ Complete one-time AWS setup for deploying frontend and backend to ECS Fargate.
 [ ] 18. ECS — pulse-backend-service
 [ ] 19. ECS — pulse-frontend-service
 [ ] 20. DNS — CNAME records to ALB
-[ ] 21. GitHub — Repository secrets
+[ ] 21. GitHub — VITE_API_BASE_URL secret
 ```
+
+---
+
+## Checklist — No Domain (use this if you don't have a domain yet)
+
+```
+[ ] 1.  IAM — ecsTaskExecutionRole
+[ ] 2.  IAM — ecsTaskRole
+[ ] 3.  SSM — 9 secret parameters
+[ ] 4.  ECR — axiora/pulse-frontend repository
+[ ] 5.  CloudWatch — /ecs/pulse-backend log group
+[ ] 6.  CloudWatch — /ecs/pulse-frontend log group
+[ ] 7.  VPC — pulse-alb-sg security group
+[ ] 8.  VPC — pulse-backend-sg security group
+[ ] 9.  VPC — pulse-frontend-sg security group
+[ ] 10. ECS — axiora-pulse-cluster
+[ ] 11. ALB — pulse-backend-tg target group
+[ ] 12. ALB — pulse-frontend-tg target group
+[ ] 13. ALB — axiora-pulse-backend-alb  (backend only)
+[ ] 13. ALB — axiora-pulse-frontend-alb (frontend only)
+[ ] 16. ECS — Register task definitions (CLI)
+[ ] 17. ECR — Push initial images (CLI)
+[ ] 18. ECS — pulse-backend-service
+[ ] 19. ECS — pulse-frontend-service
+[ ] 21. GitHub — VITE_API_BASE_URL secret (use backend ALB DNS name)
+```
+
+Steps **14, 15, 20 are skipped** — no SSL cert and no DNS records needed yet.
 
 ---
 
@@ -219,24 +250,52 @@ Create both:
 
 ## Step 13 — ALB: Load Balancer
 
+### If you have a domain (single ALB)
+
 **EC2 → Load Balancers → Create load balancer → Application Load Balancer**
 
 1. Name: `axiora-pulse-alb`
-2. Scheme: **Internet-facing**
-3. IP address type: **IPv4**
-4. VPC: **default VPC**
-5. Mappings: check **all 3 availability zones** (all default subnets)
-6. Security groups: remove the default, add **`pulse-alb-sg`**
-7. Listeners:
-   - Add **HTTP : 80** → Action: **Redirect to HTTPS** (port 443, 301)
-   - Add **HTTPS : 443** → Action: Forward to **`pulse-frontend-tg`**
-8. **Create load balancer**
+2. Scheme: **Internet-facing** | IP: **IPv4**
+3. VPC: **default VPC**
+4. Mappings: check **all 3 availability zones**
+5. Security groups: remove default, add **`pulse-alb-sg`**
+6. Listeners:
+   - **HTTP : 80** → Redirect to HTTPS (port 443, 301)
+   - **HTTPS : 443** → Forward to `pulse-frontend-tg`
+7. **Create** — note the DNS name (needed for Step 20)
 
-**Note the ALB DNS name** from the summary — e.g.:
-```
-axiora-pulse-alb-123456789.ap-south-1.elb.amazonaws.com
-```
-You will need this for DNS records.
+---
+
+### If you don't have a domain yet (two separate ALBs)
+
+Create **two ALBs** — one per service. Skip Steps 14, 15, and 20.
+
+**Backend ALB:**
+
+1. Name: `axiora-pulse-backend-alb`
+2. Scheme: **Internet-facing** | IP: **IPv4**
+3. VPC: **default VPC**
+4. Mappings: check **all 3 availability zones**
+5. Security groups: remove default, add **`pulse-alb-sg`**
+6. Listeners: **HTTP : 80** → Forward to `pulse-backend-tg`
+7. **Create** — note the DNS name (e.g. `axiora-pulse-backend-alb-xxx.ap-south-1.elb.amazonaws.com`)
+
+**Frontend ALB:**
+
+1. Name: `axiora-pulse-frontend-alb`
+2. Same settings as backend ALB above
+3. Listeners: **HTTP : 80** → Forward to `pulse-frontend-tg`
+4. **Create** — note the DNS name
+
+> In Step 18 select `axiora-pulse-backend-alb`, listener **80:HTTP**, target group `pulse-backend-tg`  
+> In Step 19 select `axiora-pulse-frontend-alb`, listener **80:HTTP**, target group `pulse-frontend-tg`  
+> In Step 21 set `VITE_API_BASE_URL = http://axiora-pulse-backend-alb-xxx.ap-south-1.elb.amazonaws.com`
+
+**When you get a domain later:**
+1. Create ACM cert (Step 14) for `app.*` and `api.*`
+2. Add HTTPS:443 listeners to both ALBs with the cert
+3. Point `api.*` CNAME → backend ALB DNS, `app.*` CNAME → frontend ALB DNS
+4. Update `VITE_API_BASE_URL` in GitHub secrets → push any frontend file to redeploy
 
 ---
 
