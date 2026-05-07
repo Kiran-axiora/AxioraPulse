@@ -18,6 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from services.email_service import send_email
 from slowapi.util import get_remote_address
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 from fastapi import Request
 from core.rate_limiter import limiter
 from db.database import get_db
@@ -102,7 +104,7 @@ def invite_user(
             db.commit()
             db.refresh(existing)
 
-            invite_link = f"{os.getenv("FRONTEND_URL", "http://localhost:5173")}/accept-invite/{existing.invite_token}"
+            invite_link = f"{FRONTEND_URL}/accept-invite/{existing.invite_token}"
 
             try:
                 send_email(
@@ -149,7 +151,7 @@ def invite_user(
     db.commit()
     db.refresh(new_user)
 
-    invite_link = f"{os.getenv("FRONTEND_URL", "http://localhost:5173")}/accept-invite/{new_user.invite_token}"
+    invite_link = f"{FRONTEND_URL}/accept-invite/{new_user.invite_token}"
 
     try:
         send_email(
@@ -195,7 +197,7 @@ def bulk_invite(
             db.commit()
             db.refresh(existing)
 
-            invite_link = f"{os.getenv("FRONTEND_URL", "http://localhost:5173")}/accept-invite/{existing.invite_token}"
+            invite_link = f"{FRONTEND_URL}/accept-invite/{existing.invite_token}"
 
             try:
                 send_email(
@@ -236,7 +238,7 @@ def bulk_invite(
         db.commit()
         db.refresh(new_user)
 
-        invite_link = f"{os.getenv("FRONTEND_URL", "http://localhost:5173")}/accept-invite/{new_user.invite_token}"
+        invite_link = f"{FRONTEND_URL}/accept-invite/{new_user.invite_token}"
 
         try:
             send_email(
