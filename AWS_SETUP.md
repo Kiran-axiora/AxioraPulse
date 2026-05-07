@@ -319,11 +319,8 @@ docker build -f backend/Dockerfile.prod \
 docker push 217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora/pulse-fastapi:latest
 
 # ── Frontend ─────────────────────────────────────────────────────────────────
-# Replace the values below with your actual production values
 docker build \
   --build-arg VITE_API_BASE_URL=https://api.yourdomain.com \
-  --build-arg VITE_SUPABASE_URL=https://xxxx.supabase.co \
-  --build-arg VITE_SUPABASE_ANON_KEY=eyJ... \
   -t 217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora/pulse-frontend:latest \
   ./frontend
 
@@ -405,8 +402,6 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions → 
 | `AWS_ACCESS_KEY_ID` | ✅ already set |
 | `AWS_SECRET_ACCESS_KEY` | ✅ already set |
 | `VITE_API_BASE_URL` | `https://api.yourdomain.com` |
-| `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key (never the service role key) |
 
 ---
 
