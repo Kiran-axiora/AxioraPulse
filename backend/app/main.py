@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db.database import engine, Base
 from db import models  # noqa: F401 — needed so Base.metadata is populated
-
+from routes.demo import router as demo_router
 from routes.auth      import router as auth_router
 from routes.users     import router as users_router
 from routes.tenants   import router as tenants_router
@@ -34,6 +34,9 @@ from routes.ai        import router as ai_router
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from fastapi.responses import JSONResponse
+
+from routes.demo import router as demo_router
+
 
 from core.rate_limiter import limiter
 
@@ -82,6 +85,8 @@ app.include_router(feedback_router)
 app.include_router(dashboard_router)
 app.include_router(utils_router)
 app.include_router(ai_router)
+app.include_router(demo_router)
+
 
 
 # ── Health ────────────────────────────────────────────────────────────────────

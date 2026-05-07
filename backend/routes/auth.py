@@ -1,120 +1,70 @@
-"""
-routes/auth.py
-──────────────
-POST /auth/register  — Create tenant + super_admin user
-POST /auth/login     — Authenticate, return JWT
-GET  /auth/me        — Return current user's profile + tenant
-PATCH /auth/me/profile  — Update display name
-PATCH /auth/me/password — Change password
-"""
 
-import re
-import uuid
-import secrets
-import os
-from datetime import datetime, timezone, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from fastapi import Request
+import uuid, os, re
+
 from core.rate_limiter import limiter
 from db.database import get_db
 from db.models import Tenant, UserProfile, RoleEnum
 from schemas import (
     RegisterRequest, LoginRequest, AuthResponse, MeResponse,
     UserProfileOut, TenantOut, UserProfileUpdate, PasswordUpdate,
-    MessageResponse,
+    MessageResponse
 )
-from auth_utils import hash_password, verify_password, create_access_token
-from auth_utils import create_refresh_token
+from auth_utils import (
+    hash_password, verify_password,
+    create_access_token, create_refresh_token
+)
 from dependencies import get_current_user
 from jose import jwt, JWTError
-from fastapi import Body
-from fastapi import Header
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+security = HTTPBearer()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
-security = HTTPBearer()
-router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ---------------- HELPERS ----------------
 
-def _slugify(text: str) -> str:
-    """Convert arbitrary text to a URL-safe slug."""
-    slug = text.lower().strip()
-    slug = re.sub(r"[^\w\s-]", "", slug)
-    slug = re.sub(r"[\s_-]+", "-", slug)
-    slug = slug.strip("-")
-    return slug or "org"
+def _slugify(text: str):
+    text = text.lower().strip()
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[\s_-]+", "-", text)
+    return text.strip("-") or "org"
 
 
-def _unique_slug(base: str, db: Session) -> str:
-    """Ensure the slug is unique in the tenants table."""
-    slug = _slugify(base)
-    candidate = slug
-    counter = 1
-    while db.query(Tenant).filter(Tenant.slug == candidate).first():
-        candidate = f"{slug}-{counter}"
-        counter += 1
-    return candidate
+def _build_auth_response(user: UserProfile, db: Session):
+    tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+    profile = UserProfileOut.model_validate(user)
 
-
-def _build_auth_response(user: UserProfile, db: Session) -> dict:
-    """Build the dict used by AuthResponse."""
-    tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first() if user.tenant_id else None
-    profile_out = UserProfileOut.model_validate(user)
-    tenant_out  = TenantOut.model_validate(tenant) if tenant else None
-    access_token = create_access_token({
-        "sub": str(user.id),
-        "email": user.email,
-        "full_name": user.full_name,
-        "role": user.role.value if user.role else "viewer",
-        "tenant_id": str(user.tenant_id) if user.tenant_id else None,
-    })
-    refresh_token = create_refresh_token({
-        "sub": str(user.id),
-        "email": user.email,
-        "type": "refresh"   # 🔥 IMPORTANT
-    })
     return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
+        "access_token": create_access_token({"sub": str(user.id)}),
+        "refresh_token": create_refresh_token({"sub": str(user.id), "type": "refresh"}),
         "token_type": "bearer",
-        "user": profile_out,
-        "profile": profile_out,
-        "tenant": tenant_out,
+        "user": profile,
+        "profile": profile,
+        "tenant": TenantOut.model_validate(tenant) if tenant else None,
     }
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# ---------------- ROUTES ----------------
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AuthResponse)
 @limiter.limit("3/minute")
 def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
-    """
-    Register a new organisation.
-    Creates:
-      1. A Tenant row
-      2. A UserProfile with role=super_admin
-    Returns a JWT so the user is immediately logged in (matches Register.jsx behaviour).
-    """
-    # Duplicate email check
     if db.query(UserProfile).filter(UserProfile.email == body.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(400, "Email already exists")
 
-    # Create tenant
-    slug = _unique_slug(body.tenant_slug or body.tenant_name, db)
     tenant = Tenant(
         id=uuid.uuid4(),
         name=body.tenant_name,
-        slug=slug,
+        slug=_slugify(body.tenant_name),
     )
     db.add(tenant)
-    db.flush()  # get tenant.id before committing
+    db.flush()
 
-    # Create super_admin user
     user = UserProfile(
         id=uuid.uuid4(),
         email=body.email,
@@ -125,6 +75,7 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
         is_active=True,
         account_status="active",
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -135,96 +86,54 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
 @router.post("/login", response_model=AuthResponse)
 @limiter.limit("5/minute")
 def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Authenticate with email + password.
-    Returns JWT and user/profile/tenant data.
-    Matches the shape consumed by Login.jsx → useAuth.js.
-    """
     user = db.query(UserProfile).filter(UserProfile.email == body.email).first()
-    if not user or not user.password_hash:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not verify_password(body.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is deactivated")
+
+    if not user or not verify_password(body.password, user.password_hash):
+        raise HTTPException(401, "Invalid credentials")
 
     return _build_auth_response(user, db)
 
 
 @router.post("/refresh")
 @limiter.limit("10/minute")
-def refresh_access_token(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+def refresh(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
-        # ✅ Get token correctly from HTTPBearer
-        token = credentials.credentials
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
 
-        # ✅ Decode token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
-        # ✅ Validate token type
         if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise HTTPException(401, "Invalid token")
 
-        # ✅ Create new access token
-        new_access = create_access_token({
-            "sub": payload.get("sub"),
-            "email": payload.get("email")
-        })
-
-        return {"access_token": new_access}
+        return {"access_token": create_access_token({"sub": payload["sub"]})}
 
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        raise HTTPException(401, "Invalid token")
 
-    except Exception as e:
-        # 🔥 This helps you debug instead of silent 500
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/me", response_model=MeResponse)
 @limiter.limit("30/minute")
-def me(current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
-    """
-    Return the authenticated user's profile and tenant.
-    Called by useAuth.js on every app load to hydrate the Zustand store.
-    """
-    tenant = (
-        db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
-        if current_user.tenant_id else None
-    )
-    profile_out = UserProfileOut.model_validate(current_user)
+def me(request: Request, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    tenant = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
+    profile = UserProfileOut.model_validate(current_user)
+
     return {
-        "user": profile_out,
-        "profile": profile_out,
+        "user": profile,
+        "profile": profile,
         "tenant": TenantOut.model_validate(tenant) if tenant else None,
     }
 
 
-@router.patch("/me/profile", response_model=UserProfileOut)
+@router.patch("/me/profile")
 @limiter.limit("20/minute")
-def update_profile(
-    body: UserProfileUpdate,
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Update full_name (Settings.jsx profile section)."""
-    if body.full_name is not None:
-        current_user.full_name = body.full_name
+def update_profile(request: Request, body: UserProfileUpdate, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_user.full_name = body.full_name
     db.commit()
     db.refresh(current_user)
     return UserProfileOut.model_validate(current_user)
 
 
-@router.patch("/me/password", response_model=MessageResponse)
+@router.patch("/me/password")
 @limiter.limit("5/minute")
-def change_password(
-    body: PasswordUpdate,
-    current_user: UserProfile = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Change password (Settings.jsx + AcceptInvite.jsx)."""
+def change_password(request: Request, body: PasswordUpdate, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
     current_user.password_hash = hash_password(body.new_password)
     db.commit()
-    return {"message": "Password updated successfully"}
+    return {"message": "Password updated"}

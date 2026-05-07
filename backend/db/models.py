@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from db.database import Base
+from datetime import datetime
 
 import enum
 
@@ -184,6 +185,12 @@ class SurveyResponse(Base):
     last_saved_at     = Column(DateTime(timezone=True), nullable=True)
     response_metadata = Column("metadata", JSONB, nullable=True)
 
+    # demographics
+    age_range = Column(String(50), nullable=True)
+    gender = Column(String(50), nullable=True)
+    occupation = Column(String(100), nullable=True)
+    city = Column(String(100), nullable=True)
+
     __table_args__ = (
         UniqueConstraint("session_token", name="uq_survey_response_session_token"),
     )
@@ -249,3 +256,23 @@ class SurveyShare(Base):
     # relationships
     survey = relationship("Survey", back_populates="shares")
     user   = relationship("UserProfile")
+
+class DemoSchedule(Base):
+    __tablename__ = "demo_schedules"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+
+    # demo booking details
+    demo_date = Column(String, nullable=False)
+    time_slot = Column(String, nullable=False)
+
+    # assigned meet link
+    meeting_link = Column(String, nullable=False)
+
+    # booking status
+    status = Column(String, default="scheduled")
+
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -24,7 +24,7 @@ import os
 from datetime import datetime, timezone
 from typing import List
 from core.rate_limiter import limiter
-
+from fastapi import Request
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
@@ -127,7 +127,7 @@ def list_surveys(
 
 @router.get("/slug/{slug}", response_model=SurveyOut)
 @limiter.limit("20/minute")
-def get_survey_by_slug(slug: str, db: Session = Depends(get_db)):
+def get_survey_by_slug( request: Request, slug: str, db: Session = Depends(get_db)):
     survey = (
         db.query(Survey)
         .options(joinedload(Survey.questions))
@@ -150,6 +150,7 @@ def get_survey_by_slug(slug: str, db: Session = Depends(get_db)):
 @router.post("/", response_model=SurveyOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def create_survey(
+    request: Request,  
     body: SurveyCreate,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -546,6 +547,7 @@ def revoke_share(
 @router.get("/{survey_id}/responses", response_model=List[ResponseOut])
 @limiter.limit("10/minute")
 def get_survey_responses(
+    request: Request,  
     survey_id: uuid.UUID,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -572,6 +574,7 @@ def get_survey_responses(
 @router.get("/{survey_id}/answers", response_model=List[AnswerOut])
 @limiter.limit("10/minute")
 def get_survey_answers(
+     request: Request,  
     survey_id: uuid.UUID,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -612,6 +615,7 @@ def get_survey_feedback(
 @router.post("/{survey_id}/feedback")
 @limiter.limit("5/minute")
 def create_survey_feedback(
+     request: Request, 
     survey_id: uuid.UUID,
     body: dict,
     db: Session = Depends(get_db),

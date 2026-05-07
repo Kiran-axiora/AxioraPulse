@@ -7,7 +7,7 @@ AI-powered survey insights using OpenAI.
 import os
 import json
 from typing import List
-
+from fastapi import Request
 from fastapi import APIRouter, Depends, HTTPException
 from google import genai
 from pydantic import ValidationError
@@ -103,9 +103,10 @@ def _build_survey_context(survey_id: str, db: Session) -> dict:
         "questionSummaries": question_summaries
     }
 
-@router.get("/surveys/{survey_id}/insights", response_model=AIInsightsResponse)
+@router.get("/surveys/{survey_id}/insights")
 @limiter.limit("3/minute")
 async def generate_survey_insights(
+    request: Request,   # ✅ ADD
     survey_id: str,
     db: Session = Depends(get_db),
     current_user: UserProfile = Depends(get_current_user)
@@ -122,12 +123,13 @@ async def generate_survey_insights(
         responses=context["stats"],
         questionSummaries=context["questionSummaries"]
     )
-    return await generate_insights(body, current_user)
+    return await generate_insights(request, body, current_user)
 
 
-@router.post("/insights", response_model=AIInsightsResponse)
+@router.post("/insights")
 @limiter.limit("3/minute")
 async def generate_insights(
+    request: Request,   # ✅ ADD
     body: AIInsightsRequest,
     current_user: UserProfile = Depends(get_current_user)
 ):
@@ -197,9 +199,10 @@ async def generate_insights(
         raise HTTPException(status_code=500, detail=f"Failed to generate Gemini insights: {str(e)}")
 
 
-@router.post("/suggestions", response_model=AISuggestionsResponse)
+@router.post("/suggestions")
 @limiter.limit("5/minute")
 async def generate_suggestions(
+    request: Request,   # ✅ ADD
     body: AISuggestionsRequest,
     current_user: UserProfile = Depends(get_current_user)
 ):

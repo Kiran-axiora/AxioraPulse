@@ -19,7 +19,7 @@ from typing import List, Optional
 from core.rate_limiter import limiter
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-
+from fastapi import Request
 from db.database import get_db
 from db.models import SurveyResponse, SurveyAnswer, ResponseStatusEnum
 from schemas import (
@@ -50,7 +50,7 @@ def _load_response(response_id: uuid.UUID, db: Session) -> SurveyResponse:
 
 @router.post("/", response_model=ResponseOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
-def create_response(body: ResponseCreate, db: Session = Depends(get_db)):
+def create_response(request: Request, body: ResponseCreate, db: Session = Depends(get_db)):
     """
     Create a new in-progress response row.
     Called by SurveyRespond.jsx → ensureR() when the user first interacts.
@@ -73,6 +73,10 @@ def create_response(body: ResponseCreate, db: Session = Depends(get_db)):
         survey_id=body.survey_id,
         session_token=body.session_token,
         respondent_email=body.respondent_email,
+        age_range=body.age_range,
+        gender=body.gender,
+        occupation=body.occupation,
+        city=body.city,
         status=ResponseStatusEnum.in_progress,
         started_at=datetime.now(timezone.utc),
     )
@@ -86,7 +90,7 @@ def create_response(body: ResponseCreate, db: Session = Depends(get_db)):
 
 @router.get("/session/{token}", response_model=Optional[ResponseOut])
 @limiter.limit("20/minute")
-def get_response_by_session(token: str, db: Session = Depends(get_db)):
+def get_response_by_session(request: Request, token: str, db: Session = Depends(get_db)):
     """
     Lookup an existing in-progress response by session_token.
     Used on SurveyRespond page load to resume a previous session.
@@ -108,7 +112,7 @@ def get_response_by_session(token: str, db: Session = Depends(get_db)):
 # ── Get by id ─────────────────────────────────────────────────────────────────
 
 @router.get("/{response_id}", response_model=ResponseOut)
-def get_response(response_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_response(request: Request, response_id: uuid.UUID, db: Session = Depends(get_db)):
     return ResponseOut.model_validate(_load_response(response_id, db))
 
 
@@ -136,6 +140,15 @@ def update_response(
         r.last_saved_at = body.last_saved_at
     if body.metadata is not None:
         r.response_metadata = body.metadata
+        if body.age_range is not None:
+            r.age_range = body.age_range
+
+        if body.gender is not None:
+            r.gender = body.gender
+
+        if body.occupation is not None:
+            r.occupation = body.occupation
+    r.city = body.city
 
     db.commit()
     db.refresh(r)
@@ -148,6 +161,7 @@ def update_response(
 @limiter.limit("30/minute")
 
 def upsert_answers(
+    request: Request, 
     response_id: uuid.UUID,
     answers: List[AnswerIn],
     db: Session = Depends(get_db),
@@ -191,6 +205,7 @@ def upsert_answers(
 @limiter.limit("5/minute")
 
 def submit_response(
+    request: Request, 
     response_id: uuid.UUID,
     body: dict = {},
     db: Session = Depends(get_db),
@@ -221,6 +236,7 @@ def submit_response(
 @limiter.limit("10/minute")
 
 def abandon_response(
+    request: Request, 
     response_id: uuid.UUID,
     body: dict = {},
     db: Session = Depends(get_db),

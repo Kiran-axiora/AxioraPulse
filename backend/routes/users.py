@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from services.email_service import send_email
 from slowapi.util import get_remote_address
-
+from fastapi import Request
 from core.rate_limiter import limiter
 from db.database import get_db
 from db.models import UserProfile, RoleEnum
@@ -72,6 +72,7 @@ def get_user(
 @router.post("/invite", response_model=UserProfileOut, status_code=status.HTTP_200_OK)
 @limiter.limit("3/minute")
 def invite_user(
+    request: Request,
     body: InviteRequest,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -171,6 +172,7 @@ import time
 @router.post("/bulk-invite")
 @limiter.limit("2/minute")
 def bulk_invite(
+    request: Request,
     body: BulkInviteRequest,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),

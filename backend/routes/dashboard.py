@@ -13,13 +13,14 @@ from db.database import get_db
 from db.models import Survey, SurveyResponse, UserProfile, ResponseStatusEnum, SurveyStatusEnum
 from schemas import DashboardStats, RecentSurvey
 from dependencies import get_current_user
-
+from fastapi import Request
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-@router.get("/stats", response_model=DashboardStats)
+@router.get("/stats")
 @limiter.limit("30/minute")
 def dashboard_stats(
+    request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -77,6 +78,7 @@ def dashboard_stats(
 @router.get("/recent")
 @limiter.limit("30/minute")
 def recent_surveys(
+    request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -118,6 +120,7 @@ def recent_surveys(
 @router.get("/feed")
 @limiter.limit("20/minute")
 def dashboard_feed(
+    request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

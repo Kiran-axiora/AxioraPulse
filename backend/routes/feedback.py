@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from core.rate_limiter import limiter
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from fastapi import Request
 from db.database import get_db
 from db.models import SurveyFeedback, Survey, UserProfile
 from schemas import FeedbackCreate, FeedbackOut
@@ -21,7 +21,11 @@ router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 @router.post("/", response_model=FeedbackOut, status_code=201)
 @limiter.limit("5/minute")
-def create_feedback(body: FeedbackCreate, db: Session = Depends(get_db)):
+def create_feedback(
+    request: Request,   # ✅ ADD THIS
+    body: FeedbackCreate,
+    db: Session = Depends(get_db)
+):
     """
     Public endpoint — no auth required.
     Called by submitFeedback() in SurveyRespond.jsx.
@@ -42,6 +46,7 @@ def create_feedback(body: FeedbackCreate, db: Session = Depends(get_db)):
 @router.get("/survey/{survey_id}")
 @limiter.limit("10/minute")
 def get_feedback(
+    request: Request,   # ✅ ADD THIS
     survey_id: uuid.UUID,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
