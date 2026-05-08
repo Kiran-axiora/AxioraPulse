@@ -8,11 +8,11 @@ import { useLoading } from '../context/LoadingContext';
 import ConfirmModal from '../components/ConfirmModal';
 
 const ROLE_COLORS = { super_admin: 'rgba(139,92,246,0.10)', admin: 'rgba(255,69,0,0.10)', manager: 'rgba(255,184,0,0.12)', creator: 'rgba(30,122,74,0.10)', viewer: 'rgba(22,15,8,0.06)' };
-const ROLE_TEXT   = { super_admin: '#7C3AED', admin: 'var(--coral)', manager: '#A07000', creator: 'var(--sage)', viewer: 'rgba(22,15,8,0.38)' };
+const ROLE_TEXT = { super_admin: '#7C3AED', admin: 'var(--coral)', manager: '#A07000', creator: 'var(--sage)', viewer: 'rgba(22,15,8,0.38)' };
 
 /* Shared field styles — mirrors SurveyCreate / SurveyEdit */
-const inp   = { width: '100%', boxSizing: 'border-box', padding: '14px 18px', background: 'var(--cream)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: 'Fraunces, serif', fontSize: 15, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s' };
-const lbl   = { fontFamily: 'Syne, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.38)', display: 'block', marginBottom: 10 };
+const inp = { width: '100%', boxSizing: 'border-box', padding: '14px 18px', background: 'var(--cream)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: 'Fraunces, serif', fontSize: 15, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s' };
+const lbl = { fontFamily: 'Syne, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.38)', display: 'block', marginBottom: 10 };
 
 /* Pill button that matches espresso save / submit buttons */
 const pillBtn = (active) => ({
@@ -242,7 +242,7 @@ export default function TeamManagement() {
                     style={{ padding: '8px 16px', borderRadius: 999, border: 'none', background: 'rgba(30,122,74,0.1)', color: 'var(--sage)', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'var(--sage)'; e.currentTarget.style.color = '#fff'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(30,122,74,0.1)'; e.currentTarget.style.color = 'var(--sage)'; }}>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Enable
                   </button>
                 ) : (
@@ -251,7 +251,7 @@ export default function TeamManagement() {
                     style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'none', color: 'rgba(22,15,8,0.2)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                     onMouseEnter={e => { e.currentTarget.style.color = 'var(--terracotta)'; e.currentTarget.style.background = 'rgba(214,59,31,0.06)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(22,15,8,0.2)'; e.currentTarget.style.background = 'none'; }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
                   </button>
                 )}
                 {/* req #14: only super_admin sees delete button */}
@@ -260,7 +260,7 @@ export default function TeamManagement() {
                     style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'none', color: 'rgba(22,15,8,0.15)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                     onMouseEnter={e => { e.currentTarget.style.color = 'var(--terracotta)'; e.currentTarget.style.background = 'rgba(214,59,31,0.06)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(22,15,8,0.15)'; e.currentTarget.style.background = 'none'; }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
                   </button>
                 )}
               </div>
@@ -271,48 +271,332 @@ export default function TeamManagement() {
 
       {/* Invite modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,15,8,0.3)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={() => setShowModal(false)}>
-          <div style={{ background: 'var(--warm-white)', borderRadius: 24, padding: 40, width: '100%', maxWidth: 420, boxShadow: '0 40px 100px rgba(22,15,8,0.2)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-              <h3 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 26, letterSpacing: '-1px', color: 'var(--espresso)', margin: 0 }}>Invite member</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(22,15,8,0.3)', fontSize: 20, lineHeight: 1, transition: 'color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--espresso)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(22,15,8,0.3)'}>✕</button>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(22,15,8,0.28)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 50,
+
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+
+            padding: 16
+          }}
+          onClick={() => setShowModal(false)}
+        >
+
+          <div
+            style={{
+              background: 'var(--warm-white)',
+
+              borderRadius: 22,
+
+              width: '100%',
+              maxWidth: 370,
+
+              padding: '22px 22px 20px',
+
+              maxHeight: '88vh',
+              overflowY: 'auto',
+
+              boxShadow: '0 40px 100px rgba(22,15,8,0.18)',
+
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+
+                marginBottom: 18
+              }}
+            >
+
+              <h3
+                style={{
+                  fontFamily: 'Playfair Display, serif',
+                  fontWeight: 900,
+                  fontSize: 20,
+                  letterSpacing: '-0.6px',
+                  color: 'var(--espresso)',
+                  margin: 0,
+                  lineHeight: 1
+                }}
+              >
+                Invite member
+              </h3>
+
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(22,15,8,0.3)',
+                  fontSize: 18,
+                  lineHeight: 1,
+                  transition: 'color .2s'
+                }}
+                onMouseEnter={e =>
+                  e.currentTarget.style.color = 'var(--espresso)'
+                }
+                onMouseLeave={e =>
+                  e.currentTarget.style.color = 'rgba(22,15,8,0.3)'
+                }
+              >
+                ✕
+              </button>
+
             </div>
-            <form onSubmit={invite} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {[{ l: 'Name', v: iN, sv: sIN, t: 'text', ph: 'Jane Smith' }, { l: 'Email *', v: iE, sv: sIE, t: 'email', ph: 'jane@company.com' }].map(f => (
-                <div key={f.l}>
-                  <label style={lbl}>{f.l}</label>
-                  <input type={f.t} value={f.v} onChange={e => f.sv(e.target.value)} placeholder={f.ph} required={f.t === 'email'}
-                    style={inp}
-                    onFocus={e => e.target.style.borderColor = 'var(--coral)'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(22,15,8,0.1)'} />
-                </div>
-              ))}
+
+            {/* FORM */}
+            <form
+              onSubmit={invite}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12
+              }}
+            >
+
+              {/* Name */}
               <div>
-                <label style={lbl}>Role</label>
-                <select value={iR} onChange={e => sIR(e.target.value)} style={inp}
-                  onFocus={e => e.target.style.borderColor = 'var(--coral)'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(22,15,8,0.1)'}>
-                  {['viewer','creator','manager','admin'].map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                </select>
+
+                <label style={lbl}>
+                  Name
+                </label>
+
+                <input
+                  type="text"
+                  value={iN}
+                  onChange={e => sIN(e.target.value)}
+                  placeholder="Jane Smith"
+                  style={{
+                    ...inp,
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    fontSize: 14
+                  }}
+                />
+
               </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                <button type="button" onClick={() => setShowModal(false)}
-                  style={{ flex: 1, padding: '13px 20px', borderRadius: 999, border: '1px solid rgba(22,15,8,0.1)', background: 'transparent', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.5)', cursor: 'pointer' }}>
+
+              {/* Email */}
+              <div>
+
+                <label style={lbl}>
+                  Email *
+                </label>
+
+                <input
+                  type="email"
+                  value={iE}
+                  required
+                  onChange={e => sIE(e.target.value)}
+                  placeholder="jane@company.com"
+                  style={{
+                    ...inp,
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    fontSize: 14
+                  }}
+                />
+
+                {tenant?.approved_domains?.length > 0 && (
+
+                  <div
+                    style={{
+                      marginTop: 6,
+
+                      fontFamily: 'Fraunces, serif',
+                      fontSize: 11,
+
+                      color: 'rgba(22,15,8,0.45)',
+
+                      lineHeight: 1.45
+                    }}
+                  >
+                    Allowed domains:
+
+                    <span style={{ color: 'var(--coral)' }}>
+                      {" "}
+                      {tenant.approved_domains.join(', ')}
+                    </span>
+
+                  </div>
+
+                )}
+
+              </div>
+
+              {/* Role */}
+              <div>
+
+                <label style={lbl}>
+                  Role
+                </label>
+
+                <select
+                  value={iR}
+                  onChange={e => sIR(e.target.value)}
+                  style={{
+                    ...inp,
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    fontSize: 14
+                  }}
+                >
+                  {['viewer', 'creator', 'manager', 'admin'].map(r => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Role desc */}
+                <div
+                  style={{
+                    marginTop: 8,
+
+                    padding: '8px 12px',
+
+                    borderRadius: 12,
+
+                    background: 'rgba(22,15,8,0.03)',
+
+                    fontFamily: 'Fraunces, serif',
+                    fontSize: 12,
+
+                    color: 'rgba(22,15,8,0.48)',
+
+                    lineHeight: 1.45
+                  }}
+                >
+                  {{
+                    viewer: 'Can view surveys and analytics.',
+                    creator: 'Can create and manage surveys.',
+                    manager: 'Can manage surveys and team members.',
+                    admin: 'Full organisation management access.'
+                  }[iR]}
+                </div>
+
+                {/* Invite info */}
+                <div
+                  style={{
+                    marginTop: 8,
+
+                    padding: '8px 12px',
+
+                    borderRadius: 12,
+
+                    background: 'rgba(255,69,0,0.04)',
+
+                    border: '1px solid rgba(255,69,0,0.06)',
+
+                    fontFamily: 'Fraunces, serif',
+                    fontSize: 11,
+
+                    color: 'rgba(22,15,8,0.48)',
+
+                    lineHeight: 1.45
+                  }}
+                >
+                  Secure invitation link will be emailed
+                  to the member.
+                </div>
+
+              </div>
+
+              {/* Buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  marginTop: 2
+                }}
+              >
+
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  style={{
+                    flex: 1,
+
+                    padding: '11px 18px',
+
+                    borderRadius: 999,
+
+                    border: '1px solid rgba(22,15,8,0.1)',
+
+                    background: 'transparent',
+
+                    fontFamily: 'Syne, sans-serif',
+                    fontWeight: 700,
+                    fontSize: 10,
+
+                    letterSpacing: '.1em',
+                    textTransform: 'uppercase',
+
+                    color: 'rgba(22,15,8,0.5)',
+
+                    cursor: 'pointer'
+                  }}
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={busy}
-                  style={{ flex: 1, padding: '13px 20px', borderRadius: 999, border: 'none', background: busy ? 'rgba(22,15,8,0.3)' : 'var(--espresso)', color: 'var(--cream)', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: busy ? 'not-allowed' : 'pointer', transition: 'background 0.25s' }}
-                  onMouseEnter={e => { if (!busy) e.currentTarget.style.background = 'var(--coral)'; }}
-                  onMouseLeave={e => { if (!busy) e.currentTarget.style.background = 'var(--espresso)'; }}>
-                  {busy ? 'Sending…' : 'Send invite'}
+
+                <button
+                  type="submit"
+                  disabled={busy}
+                  style={{
+                    flex: 1,
+
+                    padding: '11px 18px',
+
+                    borderRadius: 999,
+
+                    border: 'none',
+
+                    background: busy
+                      ? 'rgba(22,15,8,0.3)'
+                      : 'var(--espresso)',
+
+                    color: 'var(--cream)',
+
+                    fontFamily: 'Syne, sans-serif',
+                    fontWeight: 700,
+                    fontSize: 10,
+
+                    letterSpacing: '.1em',
+                    textTransform: 'uppercase',
+
+                    cursor: busy
+                      ? 'not-allowed'
+                      : 'pointer',
+
+                    transition: 'background .25s'
+                  }}
+                >
+                  {busy
+                    ? 'Sending...'
+                    : 'Send invite'}
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
       )}
     </div>

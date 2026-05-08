@@ -1062,6 +1062,65 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      {/* <button
+        style={{
+          position: "fixed",
+          right: "28px",
+          top: "90%",
+          transform: "translateY(-50%)",
+          zIndex: 999,
+
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+
+          background: "linear-gradient(180deg, #FF4500, #FF6B35)",
+          color: "#fff",
+
+          border: "none",
+          borderRadius: "999px",
+
+          padding: "16px 28px",
+
+          fontFamily: "'Syne', sans-serif",
+          fontSize: "12px",
+          fontWeight: 700,
+          letterSpacing: ".14em",
+          textTransform: "uppercase",
+
+          boxShadow: "0 12px 30px rgba(255,69,0,.35)",
+
+          cursor: "pointer",
+          transition: "all .35s cubic-bezier(.34,1.56,.64,1)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform =
+            "translateY(-50%) scale(1.06)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform =
+            "translateY(-50%) scale(1)";
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="3"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+
+        Book Demo
+      </button> */}
     </div>
   );
 }
