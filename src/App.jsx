@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PageLoader from "./pages/PageLoader";
-
+import VerifyEmail from "./pages/VerifyEmail";
 // ── Loading context ───────────────────────────────────────────────
 import { LoadingProvider, useLoading } from './context/LoadingContext';
 
@@ -46,7 +46,7 @@ function GlobalSpinner() {
 
 function AppRoutes() {
   const { initialize, initialized, user } = useAuthStore();
-  
+
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -57,7 +57,7 @@ function AppRoutes() {
   if (!initialized && localStorage.getItem('token')) {
     return <PageLoader label="Resuming session…" />;
   }
- 
+
   return (
     <>
       <GlobalSpinner />
@@ -114,7 +114,10 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
-
+        <Route
+          path="/verify-email"
+          element={<VerifyEmail />}
+        />
         {/* ── Public survey response (no auth needed) ── */}
         <Route path="/s/:slug" element={<SurveyRespond />} />
         <Route path="/embed/:slug" element={<EmbedView />} />

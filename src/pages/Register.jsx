@@ -29,18 +29,7 @@ export default function Register() {
   }
   const s = (k, v) => sf(p => { const n = { ...p, [k]: v }; if (k === 'tenantName') n.tenantSlug = v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); return n; });
 
-  // const go = async e => {
-  //   e.preventDefault();
-  //   if (!f.fullName || !f.email || !f.password || !f.tenantName) return toast.error('Fill all fields');
-  //   if (f.password.length < 6) return toast.error('Password needs 6+ characters');
-  //   setBusy(true);
-  //   try {
-  //     const r = await signUp(f.email, f.password, f.tenantName, f.tenantSlug, f.fullName);
-  //     if (r.existing) { toast.success(r.message); r.session ? nav('/dashboard') : nav('/login'); }
-  //     else if (r.needsConfirmation) { toast.success('Check your email to confirm!', { duration: 8000 }); nav('/login'); }
-  //     else { toast.success('Welcome to Axiora Pulse!'); nav('/dashboard'); }
-  //   } catch (e) { toast.error(e.message); } finally { setBusy(false); }
-  // };
+
 
   const go = async (e) => {
     e.preventDefault();
@@ -65,16 +54,21 @@ export default function Register() {
       });
 
       // 👇 depends on your backend response
-      if (res.access_token) {
-        localStorage.setItem("token", res.access_token);
-        // Hydrate store
-        await initialize(true);
-        toast.success("Account created successfully!");
-        nav("/dashboard");
-      } else {
-        toast.success("Registered! Please login.");
-        nav("/login");
-      }
+      // if (res.access_token) {
+      //   localStorage.setItem("token", res.access_token);
+      //   // Hydrate store
+      //   await initialize(true);
+      //   toast.success("Account created successfully!");
+      //   nav("/dashboard");
+      toast.success(
+        "Verification email sent. Please check your inbox."
+      );
+
+      nav("/login");
+      // } else {
+      //   toast.success("Registered! Please login.");
+      //   nav("/login");
+      // }
 
     } catch (err) {
       console.log("FULL ERROR:", err.response?.data);

@@ -34,21 +34,6 @@ function ForgotPasswordModal({ onClose }) {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
-  // const send = async e => {
-  //   e.preventDefault();
-  //   if (!email) return toast.error('Enter your email address');
-  //   setBusy(true);
-  //   try {
-  //     const { error } = await localStorage.auth.resetPasswordForEmail(email, {
-  //       redirectTo: `${window.location.origin}/update-password`,
-  //     });
-  //     if (error) throw error;
-  //     setSent(true);
-  //   } catch (err) {
-  //     toast.error(friendlyAuthError(err.message));
-  //   } finally { setBusy(false); }
-  // };
-  //simple function for the forgot password button since the backend functionality isn't implemented yet
   const send = async (e) => {
     e.preventDefault();
     if (!email) return toast.error('Enter your email address');
@@ -167,7 +152,19 @@ export default function Login() {
       toast.success("Welcome back!");
       nav("/dashboard");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Login failed");
+      // console.log("LOGIN ERROR:", err.response?.data);
+      const msg =
+        err.response?.data?.detail ||
+        "Login failed";
+      if (
+        msg.toLowerCase().includes("verify")
+      ) {
+        toast.error(
+          "Please verify your email before logging in."
+        );
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }
