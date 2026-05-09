@@ -1,31 +1,33 @@
 #!/bin/bash
+set -e
 
-# Check if we're running in local mode (db service available) or production (Supabase)
-# DATABASE_URL should be set via environment
+# Wait for database with a retry limit (max 30 attempts, 2s apart = 60s)
 if [[ "$DATABASE_URL" == *"localhost"* ]] || [[ "$DATABASE_URL" == *"db:"* ]]; then
     echo "Waiting for local database..."
-    python -c "
-import time
-import psycopg2
-while True:
-    try:
-        conn = psycopg2.connect('$DATABASE_URL')
-        conn.close()
-        break
-    except:
-        time.sleep(1)
-"
+    MAX_RETRIES=30
+    RETRY=0
+    until python -c "
+import psycopg2, os, sys
+try:
+    psycopg2.connect(os.environ['DATABASE_URL']).close()
+    sys.exit(0)
+except:
+    sys.exit(1)
+" ; do
+        RETRY=$((RETRY + 1))
+        if [ "$RETRY" -ge "$MAX_RETRIES" ]; then
+            echo "ERROR: Database not reachable after $MAX_RETRIES attempts. Exiting."
+            exit 1
+        fi
+        echo "Waiting for database... ($RETRY/$MAX_RETRIES)"
+        sleep 2
+    done
     echo "Local database is ready!"
-else
-    echo "Connecting to production database (Supabase)..."
-    sleep 2  # Give Supabase connection time to establish
 fi
 
-# Run database initialization (Alembic migrations)
+# Apply all pending Alembic migrations
 echo "Running database migrations..."
-python init_db.py
-python update_db_schema.py
-
+alembic upgrade head
 echo "Database setup complete!"
 
 # Start the application
