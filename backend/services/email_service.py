@@ -1,9 +1,9 @@
-import os
 import smtplib
 from email.mime.text import MIMEText
+from core import config
 
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASS = os.getenv("EMAIL_PASS")
+EMAIL_USER = config.EMAIL_USER
+EMAIL_PASS = config.EMAIL_PASS
 
 def send_email(to_email: str, subject: str, body: str):
     try:

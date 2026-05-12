@@ -12,7 +12,6 @@ GET    /users/{id}      — Get single user profile
 
 import uuid
 import secrets
-import os
 from schemas import BulkInviteRequest
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
@@ -29,7 +28,9 @@ from schemas import (
 from auth_utils import hash_password
 from dependencies import get_current_user
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+from core import config
+
+FRONTEND_URL = config.FRONTEND_URL
 
 router = APIRouter(prefix="/users", tags=["users"])
 

@@ -18,12 +18,13 @@ from auth_utils import (
 )
 from dependencies import get_current_user
 from jose import jwt, JWTError
+from core import config
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
+SECRET_KEY = config.SECRET_KEY
+ALGORITHM = config.ALGORITHM
 
 
 # ---------------- HELPERS ----------------

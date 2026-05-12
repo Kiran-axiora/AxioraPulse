@@ -6,9 +6,9 @@ Unauthenticated endpoints called by public-facing survey pages.
 POST /public/send-email  — Send survey share or resume-link email via Resend
 """
 
-import os
 import requests
 from fastapi import APIRouter, HTTPException
+from core import config
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 
@@ -100,8 +100,8 @@ def send_survey_email(body: SendEmailRequest):
     Called from the survey builder (share) and SurveyRespond (resume link).
     No auth required — the survey URL itself is the access token.
     """
-    resend_key = os.getenv("RESEND_API_KEY")
-    email_from = os.getenv("EMAIL_FROM", "Axiora Pulse <noreply@axiorapulse.com>")
+    resend_key = config.RESEND_API_KEY
+    email_from = config.EMAIL_FROM
 
     if not resend_key:
         raise HTTPException(status_code=500, detail="Email service not configured")

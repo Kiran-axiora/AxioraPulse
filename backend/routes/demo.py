@@ -1,5 +1,4 @@
 
-import os
 import uuid
 import requests
 
@@ -15,6 +14,7 @@ from schemas.demo import DemoRequest
 from services.email_service import send_email
 
 from core.rate_limiter import limiter
+from core import config
 
 router = APIRouter(
     prefix="/demo",
@@ -22,9 +22,9 @@ router = APIRouter(
 )
 
 # Zoom credentials
-ACCOUNT_ID = os.getenv("ZOOM_ACCOUNT_ID")
-CLIENT_ID = os.getenv("ZOOM_CLIENT_ID")
-CLIENT_SECRET = os.getenv("ZOOM_CLIENT_SECRET")
+ACCOUNT_ID = config.ZOOM_ACCOUNT_ID
+CLIENT_ID = config.ZOOM_CLIENT_ID
+CLIENT_SECRET = config.ZOOM_CLIENT_SECRET
 
 
 @router.post("/schedule")

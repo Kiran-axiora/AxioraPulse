@@ -4,7 +4,7 @@ routes/ai.py
 AI-powered survey insights using OpenAI.
 """
 
-import os
+from core import config
 import json
 from typing import List
 from fastapi import Request
@@ -140,7 +140,7 @@ async def generate_insights(
 ):
     print(f"[AI] Received Gemini request for survey: {body.surveyTitle}")
     
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = config.GOOGLE_API_KEY
     if not api_key:
         raise HTTPException(
             status_code=500, 
@@ -211,7 +211,7 @@ async def generate_survey(
     body: AIGenerateRequest,
     current_user: UserProfile = Depends(get_current_user)
 ):
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = config.GOOGLE_API_KEY
     if not api_key:
         raise HTTPException(status_code=500, detail="Google API key not configured on server")
 
@@ -275,7 +275,7 @@ async def generate_suggestions(
 ):
     print(f"[AI] Received Gemini suggestions request for survey: {body.surveyTitle}")
     
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = config.GOOGLE_API_KEY
     if not api_key:
         raise HTTPException(
             status_code=500, 
