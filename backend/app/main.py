@@ -10,16 +10,14 @@ Startup sequence:
   4. Health-check endpoint
 """
 
-import sys
-import os
-
-# Ensure the backend root is on the path so `db`, `routes`, etc. resolve
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
-from db.database import engine, Base
+from db.database import engine
 from db import models  # noqa: F401 — needed so Base.metadata is populated
 from routes.demo import router as demo_router
 from routes.auth      import router as auth_router
@@ -32,19 +30,8 @@ from routes.dashboard import router as dashboard_router
 from routes.utils     import router as utils_router
 from routes.ai        import router as ai_router
 from routes.payments  import router as payments_router
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-from fastapi.responses import JSONResponse
-from sqlalchemy import text
-from db.database import engine
-from routes.demo import router as demo_router
 from core import config
 from core.rate_limiter import limiter
-
-# ── Create tables ─────────────────────────────────────────────────────────────
-# In production, replace this with Alembic migrations.
-
-
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -60,11 +47,11 @@ app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 # Use wildcard origins and disable credentials for maximum development compatibility.
-# Since we use Bearer tokens (Authorization header) rather than cookies, 
+# Since we use Bearer tokens (Authorization header) rather than cookies,
 # allow_credentials=True is NOT required.
 app.add_middleware(
     CORSMiddleware,
-  
+
     allow_origins=[
         *([config.FRONTEND_URL] if config.FRONTEND_URL else []),
         "http://localhost:5173",
@@ -99,21 +86,21 @@ app.include_router(demo_router)
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
-@app.get("/health", tags=["health"]) 
-def health(): 
-    try: 
-        with engine.connect() as connection: 
-            connection.execute( text("SELECT 1") ) 
-        return { 
-            "status": "healthy", 
-            "service": "Nexora Pulse API", 
-            "database": "connected" 
-            } 
-    except Exception as e: 
-        return { 
+@app.get("/health", tags=["health"])
+def health():
+    try:
+        with engine.connect() as connection:
+            connection.execute( text("SELECT 1") )
+        return {
+            "status": "healthy",
+            "service": "Nexora Pulse API",
+            "database": "connected"
+            }
+    except Exception as e:
+        return {
             "status": "unhealthy",
             "database": "disconnected",
-            "error": str(e) 
+            "error": str(e)
             }
 
 

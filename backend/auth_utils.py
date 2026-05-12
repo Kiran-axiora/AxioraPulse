@@ -10,15 +10,11 @@ from typing import Optional
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from dotenv import load_dotenv
+from core import config
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise ValueError("❌ SECRET_KEY is not set in .env file")
-ALGORITHM  = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+SECRET_KEY = config.SECRET_KEY
+ALGORITHM  = config.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = config.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # pbkdf2_sha256 context
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -60,7 +56,7 @@ def decode_access_token(token: str) -> Optional[dict]:
         return None
 # ── Refresh Token Helper ─────────────────────────────────────────────────────
 
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+REFRESH_TOKEN_EXPIRE_DAYS = config.REFRESH_TOKEN_EXPIRE_DAYS
 
 def create_refresh_token(data: dict) -> str:
     """
