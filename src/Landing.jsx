@@ -126,8 +126,14 @@ const CSS = `
   display: flex; flex-direction: column; justify-content: center;
   overflow: hidden; background: var(--warm-white); padding-bottom: 100px;
 }
-.lp-mesh { position: absolute; inset: 0; z-index: 0; }
-.lp-mb { position: absolute; border-radius: 50%; filter: blur(90px); animation: lpDrift 14s ease-in-out infinite; }
+.lp-mesh { position: absolute; inset: 0; z-index: 0;   pointer-events: none;
+ }
+.lp *{
+  cursor:auto !important;
+  overlay.style.cursor = "default";
+popup.style.cursor = "default";
+}
+.lp-mb { position: absolute; border-radius: 50%; pointer-events:none; filter: blur(90px); animation: lpDrift 14s ease-in-out infinite; }
 .lp-mb1 { width: 900px; height: 900px; background: radial-gradient(circle,rgba(255,69,0,.45),rgba(255,184,0,.2),transparent 70%); top: -300px; right: -200px; animation-delay: 0s; }
 .lp-mb2 { width: 600px; height: 600px; background: radial-gradient(circle,rgba(255,107,53,.35),rgba(242,213,194,.5),transparent 70%); bottom: -150px; left: 100px; animation-delay: -5s; }
 .lp-mb3 { width: 500px; height: 500px; background: radial-gradient(circle,rgba(255,184,0,.3),rgba(255,69,0,.15),transparent 70%); top: 40%; left: 35%; animation-delay: -9s; }

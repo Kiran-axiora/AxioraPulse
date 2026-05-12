@@ -77,7 +77,7 @@ export default function SurveyRespond() {
 
   // For demographic questions shown at end (if enabled in survey settings)
   const [showDemographics, setShowDemographics] = useState(false);
-  const [showDemoPopup, setShowDemoPopup] = useState(false);
+  // const [showDemoPopup, setShowDemoPopup] = useState(false);
   const [demoEmail, setDemoEmail] = useState(email || "");
   const [demographics, setDemographics] = useState({
     age_range: "",
@@ -610,8 +610,8 @@ export default function SurveyRespond() {
               }
 
               setShowDemographics(false);
-              setShowDemoPopup(true);
-              // setDone(true);
+              // setShowDemoPopup(true);
+              setDone(true);
             }}
             style={{
               padding: "18px 20px",
@@ -634,8 +634,8 @@ export default function SurveyRespond() {
           <button
             onClick={() => {
               setShowDemographics(false);
-              setShowDemoPopup(true);
-              // setDone(true);
+              // setShowDemoPopup(true);
+              setDone(true);
             }}
             style={{
               padding: "18px 28px",
@@ -657,217 +657,215 @@ export default function SurveyRespond() {
       </motion.div>
     </div>
   );
-  if (showDemoPopup)
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#0E0501",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          position: "relative",
-          overflow: "hidden"
-        }}
-      >
-        {/* Glow */}
-        <div
-          style={{
-            position: "absolute",
-            width: 650,
-            height: 650,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(255,90,0,.18), transparent 70%)",
-            filter: "blur(90px)",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%,-50%)"
-          }}
-        />
+  // if (showDemoPopup)
+  //   return (
+  //     <div
+  //       style={{
+  //         minHeight: "100vh",
+  //         background: "#0E0501",
+  //         display: "flex",
+  //         alignItems: "center",
+  //         justifyContent: "center",
+  //         padding: 24,
+  //         position: "relative",
+  //         overflow: "hidden"
+  //       }}
+  //     >
+  //       {/* Glow */}
+  //       <div
+  //         style={{
+  //           position: "absolute",
+  //           width: 650,
+  //           height: 650,
+  //           borderRadius: "50%",
+  //           background:
+  //             "radial-gradient(circle, rgba(255,90,0,.18), transparent 70%)",
+  //           filter: "blur(90px)",
+  //           top: "50%",
+  //           left: "50%",
+  //           transform: "translate(-50%,-50%)"
+  //         }}
+  //       />
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          style={{
-            width: "100%",
-            maxWidth: 520,
-            textAlign: "center",
-            position: "relative",
-            zIndex: 2
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "Syne,sans-serif",
-              fontSize: 10,
-              letterSpacing: ".24em",
-              textTransform: "uppercase",
-              color: "rgba(237,232,223,.35)",
-              marginBottom: 20
-            }}
-          >
-            Product Demo
-          </p>
+  //       <motion.div
+  //         initial={{ opacity: 0, y: 30 }}
+  //         animate={{ opacity: 1, y: 0 }}
+  //         transition={{ duration: 0.55 }}
+  //         style={{
+  //           width: "100%",
+  //           maxWidth: 520,
+  //           textAlign: "center",
+  //           position: "relative",
+  //           zIndex: 2
+  //         }}
+  //       >
+  //         <p
+  //           style={{
+  //             fontFamily: "Syne,sans-serif",
+  //             fontSize: 10,
+  //             letterSpacing: ".24em",
+  //             textTransform: "uppercase",
+  //             color: "rgba(237,232,223,.35)",
+  //             marginBottom: 20
+  //           }}
+  //         >
+  //           Product Demo
+  //         </p>
 
-          <h1
-            style={{
-              fontFamily: "Playfair Display,serif",
-              fontWeight: 900,
-              fontSize: "clamp(40px,5vw,62px)",
-              lineHeight: .95,
-              letterSpacing: "-3px",
-              color: "#F4EDE5",
-              marginBottom: 18
-            }}
-          >
-            Want to know
-            <br />
-            more about our
-            <br />
-            <span style={{ color: "#FF5A00" }}>
-              product?
-            </span>
-          </h1>
+  //         <h1
+  //           style={{
+  //             fontFamily: "Playfair Display,serif",
+  //             fontWeight: 900,
+  //             fontSize: "clamp(40px,5vw,62px)",
+  //             lineHeight: .95,
+  //             letterSpacing: "-3px",
+  //             color: "#F4EDE5",
+  //             marginBottom: 18
+  //           }}
+  //         >
+  //           Want to know
+  //           <br />
+  //           more about our
+  //           <br />
+  //           <span style={{ color: "#FF5A00" }}>
+  //             product?
+  //           </span>
+  //         </h1>
 
-          <p
-            style={{
-              fontFamily: "Fraunces,serif",
-              fontSize: 16,
-              lineHeight: 1.7,
-              color: "rgba(237,232,223,.45)",
-              marginBottom: 34
-            }}
-          >
-            Book a quick demo with our team and
-            explore the platform in detail.
-          </p>
+  //         <p
+  //           style={{
+  //             fontFamily: "Fraunces,serif",
+  //             fontSize: 16,
+  //             lineHeight: 1.7,
+  //             color: "rgba(237,232,223,.45)",
+  //             marginBottom: 34
+  //           }}
+  //         >
+  //           Book a quick demo with our team and
+  //           explore the platform in detail.
+  //         </p>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 14,
-              marginBottom: 26
-            }}
-          >
-            {/* YES */}
-            <button
-              onClick={() => {
-                if (email) {
-                  setDemoEmail(email);
-                }
-              }}
-              style={{
-                padding: "18px 42px",
-                borderRadius: 999,
-                border: "none",
-                background: "#FF5A00",
-                color: "#fff",
-                fontFamily: "Syne,sans-serif",
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: ".16em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                boxShadow:
-                  "0 18px 45px rgba(255,90,0,.35)"
-              }}
-            >
-              Yes
-            </button>
+  //         <div
+  //           style={{
+  //             display: "flex",
+  //             justifyContent: "center",
+  //             gap: 14,
+  //             marginBottom: 26
+  //           }}
+  //         >
+  //           {/* YES */}
+  //           <button
+  //             onClick={() => {
+  //               if (email) {
+  //                 setDemoEmail(email);
+  //               }
+  //             }}
+  //             style={{
+  //               padding: "18px 42px",
+  //               borderRadius: 999,
+  //               border: "none",
+  //               background: "#FF5A00",
+  //               color: "#fff",
+  //               fontFamily: "Syne,sans-serif",
+  //               fontWeight: 800,
+  //               fontSize: 12,
+  //               letterSpacing: ".16em",
+  //               textTransform: "uppercase",
+  //               cursor: "pointer",
+  //               boxShadow:
+  //                 "0 18px 45px rgba(255,90,0,.35)"
+  //             }}
+  //           >
+  //             Yes
+  //           </button>
 
-            {/* NO */}
-            <button
-              onClick={() => {
-                setShowDemoPopup(false);
-                setDone(true);
-              }}
-              style={{
-                padding: "18px 42px",
-                borderRadius: 999,
-                border:
-                  "1px solid rgba(237,232,223,.1)",
-                background: "transparent",
-                color: "rgba(237,232,223,.5)",
-                fontFamily: "Syne,sans-serif",
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: ".16em",
-                textTransform: "uppercase",
-                cursor: "pointer"
-              }}
-            >
-              No
-            </button>
-          </div>
+  //           {/* NO */}
+  //           <button
+  //             onClick={() => {
+  //               setShowDemoPopup(false);
+  //               setDone(true);
+  //             }}
+  //             style={{
+  //               padding: "18px 42px",
+  //               borderRadius: 999,
+  //               border:
+  //                 "1px solid rgba(237,232,223,.1)",
+  //               background: "transparent",
+  //               color: "rgba(237,232,223,.5)",
+  //               fontFamily: "Syne,sans-serif",
+  //               fontWeight: 800,
+  //               fontSize: 12,
+  //               letterSpacing: ".16em",
+  //               textTransform: "uppercase",
+  //               cursor: "pointer"
+  //             }}
+  //           >
+  //             No
+  //           </button>
+  //         </div>
 
-          {/* Email Input */}
-          <AnimatePresence>
-            {demoEmail !== "" || email === "" ? (
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  marginTop: 10
-                }}
-              >
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={demoEmail}
-                  onChange={(e) =>
-                    setDemoEmail(e.target.value)
-                  }
-                  style={{
-                    width: "100%",
-                    height: 62,
-                    borderRadius: 18,
-                    border: "2px solid #FF5A00",
-                    background: "#F5EFE7",
-                    padding: "0 22px",
-                    fontFamily: "Fraunces,serif",
-                    fontSize: 20,
-                    color: "#160F08",
-                    outline: "none",
-                    boxSizing: "border-box",
-                    marginBottom: 22
-                  }}
-                />
+  //         {/* Email Input */}
+  //         <AnimatePresence>
+  //           {demoEmail !== "" || email === "" ? (
+  //             <motion.div
+  //               initial={{ opacity: 0, y: 14 }}
+  //               animate={{ opacity: 1, y: 0 }}
+  //               style={{
+  //                 marginTop: 10
+  //               }}
+  //             >
+  //               <input
+  //                 type="email"
+  //                 placeholder="Enter your email"
+  //                 value={demoEmail}
+  //                 onChange={(e) =>
+  //                   setDemoEmail(e.target.value)
+  //                 }
+  //                 style={{
+  //                   width: "100%",
+  //                   height: 62,
+  //                   borderRadius: 18,
+  //                   border: "2px solid #FF5A00",
+  //                   background: "#F5EFE7",
+  //                   padding: "0 22px",
+  //                   fontFamily: "Fraunces,serif",
+  //                   fontSize: 20,
+  //                   color: "#160F08",
+  //                   outline: "none",
+  //                   boxSizing: "border-box",
+  //                   marginBottom: 22
+  //                 }}
+  //               />
 
-                <button
-                  onClick={() => {
-                    console.log("Book Demo:", demoEmail);
-
-                    setShowDemoPopup(false);
-                    setDone(true);
-                  }}
-                  style={{
-                    padding: "18px 34px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: "#FF5A00",
-                    color: "#fff",
-                    fontFamily: "Syne,sans-serif",
-                    fontWeight: 800,
-                    fontSize: 12,
-                    letterSpacing: ".16em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    boxShadow:
-                      "0 18px 45px rgba(255,90,0,.35)"
-                  }}
-                >
-                  Book Demo
-                </button>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </motion.div>
-      </div>
-    );
+  //               <button
+  //                 onClick={() => {
+  //                   setShowDemoPopup(false);
+  //                   setDone(true);
+  //                 }}
+  //                 style={{
+  //                   padding: "18px 34px",
+  //                   borderRadius: 999,
+  //                   border: "none",
+  //                   background: "#FF5A00",
+  //                   color: "#fff",
+  //                   fontFamily: "Syne,sans-serif",
+  //                   fontWeight: 800,
+  //                   fontSize: 12,
+  //                   letterSpacing: ".16em",
+  //                   textTransform: "uppercase",
+  //                   cursor: "pointer",
+  //                   boxShadow:
+  //                     "0 18px 45px rgba(255,90,0,.35)"
+  //                 }}
+  //               >
+  //                 Book Demo
+  //               </button>
+  //             </motion.div>
+  //           ) : null}
+  //         </AnimatePresence>
+  //       </motion.div>
+  //     </div>
+  //   );
       
   if (done) return (
     <div style={{ height: '100vh', background: '#100B05', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, position: 'relative', overflow: 'hidden' }}>

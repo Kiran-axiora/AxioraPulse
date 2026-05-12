@@ -172,7 +172,55 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 480px' }}>
+      <Link
+        to="/"
+        style={{
+          position: "fixed",
+          top: 28,
+          right: 32,
 
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          textDecoration: "none",
+
+          zIndex: 9999,
+
+          cursor: "pointer",
+
+          transition: "all .25s ease",
+
+          color: "rgba(255,69,0,0.45)"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.12)";
+          e.currentTarget.style.color = "#FF4500";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.color = "rgba(255,69,0,0.45)";
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            transition: "all .25s ease",
+            filter: "drop-shadow(0 0 10px rgba(255,69,0,.15))"
+          }}
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </Link>
       {/* ── LEFT: dark editorial panel ── */}
       <div style={{ background: 'var(--espresso)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '80px 72px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
