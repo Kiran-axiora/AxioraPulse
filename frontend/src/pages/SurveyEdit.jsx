@@ -25,7 +25,7 @@ function parseOpts(raw, forMatrix=false) {
 
 const fi = e => { e.target.style.borderColor = 'var(--coral)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,69,0,0.08)'; };
 const fo = e => { e.target.style.borderColor = 'rgba(22,15,8,0.1)'; e.target.style.boxShadow = 'none'; };
-const INP = { width: '100%', boxSizing: 'border-box', padding: '13px 17px', background: 'var(--warm-white)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: "'Fraunces', serif", fontSize: 15, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', resize: 'vertical' };
+const INP = { width: '100%', boxSizing: 'border-box', padding: '13px 17px', background: 'var(--warm-white)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: "'Fraunces', serif", fontSize: 16, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', resize: 'vertical' };
 const LBL = { fontFamily: "'Syne', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.38)', display: 'block', marginBottom: 10 };
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")`;
 
@@ -242,6 +242,7 @@ export default function SurveyEdit() {
               <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                 {/* Drag handle */}
                 <div
+                  className="drag-handle"
                   onPointerDown={e => { e.preventDefault(); dragControls.start(e); }}
                   title="Drag to reorder"
                   style={{ cursor:'grab',padding:'4px 6px',borderRadius:8,color:'rgba(22,15,8,0.2)',display:'flex',alignItems:'center',transition:'all 0.15s',touchAction:'none' }}
@@ -258,14 +259,14 @@ export default function SurveyEdit() {
               </div>
               <div style={{ display:'flex',gap:2 }}>
                 {[[-1,'↑'],[1,'↓']].map(([d,sym]) => (
-                  <button key={d} onClick={()=>moveQ(q._id,d)} disabled={(d===-1&&i===0)||(d===1&&i===qs.length-1)}
+                  <button key={d} onClick={()=>moveQ(q._id,d)} disabled={(d===-1&&i===0)||(d===1&&i===qs.length-1)} className="np-icon-btn"
                     style={{ width:30,height:30,borderRadius:9,border:'none',background:'none',cursor:'pointer',color:'rgba(22,15,8,0.25)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s',opacity:(d===-1&&i===0)||(d===1&&i===qs.length-1)?0.18:1 }}
                     onMouseEnter={e=>{e.currentTarget.style.background='var(--cream-deep)';e.currentTarget.style.color='var(--espresso)';}}
                     onMouseLeave={e=>{e.currentTarget.style.background='none';e.currentTarget.style.color='rgba(22,15,8,0.25)';}}>
                     {sym}
                   </button>
                 ))}
-                <button onClick={()=>delQ(q._id)} style={{ width:30,height:30,borderRadius:9,border:'none',background:'none',cursor:'pointer',color:'rgba(22,15,8,0.2)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s' }}
+                <button onClick={()=>delQ(q._id)} className="np-icon-btn" style={{ width:30,height:30,borderRadius:9,border:'none',background:'none',cursor:'pointer',color:'rgba(22,15,8,0.2)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s' }}
                   onMouseEnter={e=>{e.currentTarget.style.background='rgba(214,59,31,0.08)';e.currentTarget.style.color='var(--terracotta)';}}
                   onMouseLeave={e=>{e.currentTarget.style.background='none';e.currentTarget.style.color='rgba(22,15,8,0.2)';}}>✕</button>
               </div>
@@ -345,7 +346,7 @@ export default function SurveyEdit() {
               const delRow = ri => setMx({...mx,rows:(mx.rows||[]).filter((_,j)=>j!==ri)});
               const delCol = ci => setMx({...mx,columns:(mx.columns||[]).filter((_,j)=>j!==ci)});
               return (
-                <div style={{ marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:18 }}>
+                <div className="mx-grid" style={{ marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:18 }}>
                   {[['Rows',mx.rows||[],addRow,updRow,delRow],['Columns',mx.columns||[],addCol,updCol,delCol]].map(([lbl,items,add,upd,del]) => (
                     <div key={lbl}>
                       <div style={{ fontFamily:"'Syne',sans-serif",fontSize:9,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'rgba(22,15,8,0.38)',marginBottom:10 }}>{lbl}</div>
@@ -382,6 +383,15 @@ export default function SurveyEdit() {
         .se-tab-btn::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; border-radius:1px; background:var(--coral); transform:scaleX(0); transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); transform-origin:left; }
         .se-tab-btn.active::after { transform:scaleX(1); }
         @media (max-width: 1040px) { .se-sidebar { position: static !important; } }
+        @media (max-width: 768px) {
+          .se-grid { grid-template-columns: 1fr !important; }
+          .se-sidebar { display: none !important; }
+          .q-card > div { padding: 14px 14px 14px 18px !important; }
+          .drag-handle { display: none !important; }
+          .opt-input { font-size: 16px !important; }
+          .mx-grid { grid-template-columns: 1fr !important; }
+          .se-2col { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ── PREVIEW MODAL ── */}
@@ -624,12 +634,12 @@ export default function SurveyEdit() {
                   ? <input value={sv.title} onChange={e=>s('title',e.target.value)} style={{...INP,fontSize:20,fontWeight:500,padding:'18px 22px',letterSpacing:'-0.4px',borderRadius:18}} onFocus={fi} onBlur={fo}/>
                   : <div style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:20,color:'var(--espresso)',padding:'16px 22px',background:'var(--cream-deep)',borderRadius:16,letterSpacing:'-0.4px' }}>{sv.title}</div>}
               </div>
-              <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
+              <div className="se-2col" style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
                 <div><label style={LBL}>Description</label>{isEditing?<textarea value={sv.description||''} onChange={e=>s('description',e.target.value)} placeholder="What's this research about?" rows={4} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/>:<div style={{ fontFamily:"'Fraunces',serif",fontWeight:300,fontSize:14,color:sv.description?'var(--espresso)':'rgba(22,15,8,0.3)',padding:'12px 18px',background:'var(--cream-deep)',borderRadius:16,minHeight:48,lineHeight:1.6 }}>{sv.description||'—'}</div>}</div>
                 <div><label style={LBL}>Welcome Message</label>{isEditing?<textarea value={sv.welcome_message||''} onChange={e=>s('welcome_message',e.target.value)} placeholder="Shown before Q1" rows={4} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/>:<div style={{ fontFamily:"'Fraunces',serif",fontWeight:300,fontSize:14,color:sv.welcome_message?'var(--espresso)':'rgba(22,15,8,0.3)',padding:'12px 18px',background:'var(--cream-deep)',borderRadius:16,minHeight:48,lineHeight:1.6 }}>{sv.welcome_message||'—'}</div>}</div>
               </div>
               <div><label style={LBL}>Thank You Message</label>{isEditing?<textarea value={sv.thank_you_message||''} onChange={e=>s('thank_you_message',e.target.value)} placeholder="Shown after submission" rows={2} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/>:<div style={{ fontFamily:"'Fraunces',serif",fontWeight:300,fontSize:14,color:'var(--espresso)',padding:'12px 18px',background:'var(--cream-deep)',borderRadius:16,lineHeight:1.6 }}>{sv.thank_you_message||'—'}</div>}</div>
-              <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
+              <div className="se-2col" style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
                 <div><label style={LBL}>Expires</label>{isEditing?<input type="datetime-local" value={sv.expires_at||''} onChange={e=>s('expires_at',e.target.value)} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/>:<div style={{ fontFamily:"'Fraunces',serif",fontWeight:300,fontSize:14,color:sv.expires_at?'var(--espresso)':'rgba(22,15,8,0.3)',padding:'12px 18px',background:'var(--cream-deep)',borderRadius:16,minHeight:48 }}>{sv.expires_at?formatDate(sv.expires_at):'No expiry set'}</div>}</div>
                 <div>
                   <label style={LBL}>Theme Colour</label>

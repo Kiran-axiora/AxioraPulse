@@ -7,6 +7,8 @@ so the frontend data shapes remain unchanged.
 """
 
 import uuid
+import enum
+from datetime import datetime
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Integer, Text,
     ForeignKey, Enum as SAEnum, UniqueConstraint, ARRAY, text
@@ -15,9 +17,6 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from db.database import Base
-from datetime import datetime
-
-import enum
 
 
 # ── Enumerations ──────────────────────────────────────────────────────────────
@@ -77,7 +76,7 @@ class Tenant(Base):
 
     id              = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name            = Column(String(255), nullable=False)
-    slug            = Column(String(100), unique=True, nullable=False)
+    slug            = Column(String(100), unique=True, index=True, nullable=False)
     plan            = Column(String(50), default="free")
     primary_color   = Column(String(20), default="#FF4500")
     approved_domains = Column(ARRAY(Text), default=[])
@@ -86,6 +85,8 @@ class Tenant(Base):
     # relationships
     users    = relationship("UserProfile", back_populates="tenant", cascade="all, delete-orphan")
     surveys  = relationship("Survey", back_populates="tenant", cascade="all, delete-orphan")
+    subscriptions = relationship("Subscription", back_populates="tenant", cascade="all, delete-orphan")
+    payments = relationship("Payment", back_populates="tenant", cascade="all, delete-orphan")
 
 
 class UserProfile(Base):
@@ -96,12 +97,14 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id                 = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email              = Column(String(255), unique=True, nullable=False)
+    email              = Column(String(255), unique=True, index=True, nullable=False)
     full_name          = Column(String(255), nullable=True)
-    password_hash      = Column(String(255), nullable=True)   # nullable for invited-but-not-yet-setup users
+    password_hash      = Column(String(255), nullable=True)
+    cognito_sub        = Column(String(255), unique=True, index=True, nullable=True)
     role               = Column(SAEnum(RoleEnum), nullable=False, default=RoleEnum.viewer)
-    tenant_id          = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True)
+    tenant_id          = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=True)
     is_active          = Column(Boolean, default=True)
+    is_internal        = Column(Boolean, nullable=False, default=False)  # Axiora team members bypass payment gates
     account_status     = Column(String(50), default="active")  # 'active' | 'invited'
     invite_token       = Column(String(100), unique=True, nullable=True)
     invite_accepted_at = Column(DateTime(timezone=True), nullable=True)
@@ -176,7 +179,7 @@ class SurveyResponse(Base):
     __tablename__ = "survey_responses"
 
     id                = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    survey_id         = Column(UUID(as_uuid=True), ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False)
+    survey_id         = Column(UUID(as_uuid=True), ForeignKey("surveys.id", ondelete="CASCADE"), index=True, nullable=False)
     session_token     = Column(String(100), nullable=True)
     respondent_email  = Column(String(255), nullable=True)
     status            = Column(SAEnum(ResponseStatusEnum), default=ResponseStatusEnum.in_progress)
@@ -209,7 +212,7 @@ class SurveyAnswer(Base):
     __tablename__ = "survey_answers"
 
     id           = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    response_id  = Column(UUID(as_uuid=True), ForeignKey("survey_responses.id", ondelete="CASCADE"), nullable=False)
+    response_id  = Column(UUID(as_uuid=True), ForeignKey("survey_responses.id", ondelete="CASCADE"), index=True, nullable=False)
     question_id  = Column(UUID(as_uuid=True), ForeignKey("survey_questions.id", ondelete="CASCADE"), nullable=False)
     answer_value = Column(Text, nullable=True)
     answer_json  = Column(JSONB, nullable=True)
@@ -258,6 +261,83 @@ class SurveyShare(Base):
     user   = relationship("UserProfile")
 
 
+class Plan(Base):
+    """
+    Product plan definition used for feature limits and Razorpay checkout.
+    Limits are stored in DB so feature gating does not hardcode plan rules.
+    """
+    __tablename__ = "plans"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(50), unique=True, index=True, nullable=False)  # free | pro | enterprise
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    price_paise = Column(Integer, nullable=False, default=0)
+    currency = Column(String(3), nullable=False, default="INR")
+    billing_period = Column(String(20), nullable=False, default="monthly")
+    max_surveys = Column(Integer, nullable=True)
+    max_responses = Column(Integer, nullable=True)
+    max_team_members = Column(Integer, nullable=True)
+    ai_insights_enabled = Column(Boolean, nullable=False, default=False)
+    razorpay_plan_id = Column(String(100), unique=True, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    subscriptions = relationship("Subscription", back_populates="plan")
+    payments = relationship("Payment", back_populates="plan")
+
+
+class Subscription(Base):
+    """
+    Tenant's current subscription and provider mapping.
+    One tenant should have one current subscription row.
+    """
+    __tablename__ = "subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), unique=True, index=True, nullable=False)
+    plan_id = Column(UUID(as_uuid=True), ForeignKey("plans.id", ondelete="RESTRICT"), index=True, nullable=False)
+    status = Column(String(50), nullable=False, default="active")
+    razorpay_subscription_id = Column(String(100), unique=True, nullable=True)
+    current_period_start = Column(DateTime(timezone=True), nullable=True)
+    current_period_end = Column(DateTime(timezone=True), nullable=True)
+    cancel_at_period_end = Column(Boolean, nullable=False, default=False)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    tenant = relationship("Tenant", back_populates="subscriptions")
+    plan = relationship("Plan", back_populates="subscriptions")
+    payments = relationship("Payment", back_populates="subscription")
+
+
+class Payment(Base):
+    """Payment transaction history for Razorpay orders/payments."""
+    __tablename__ = "payments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False)
+    subscription_id = Column(UUID(as_uuid=True), ForeignKey("subscriptions.id", ondelete="SET NULL"), index=True, nullable=True)
+    plan_id = Column(UUID(as_uuid=True), ForeignKey("plans.id", ondelete="SET NULL"), index=True, nullable=True)
+    razorpay_order_id = Column(String(100), unique=True, nullable=True)
+    razorpay_payment_id = Column(String(100), unique=True, nullable=True)
+    razorpay_invoice_id = Column(String(100), unique=True, nullable=True)
+    amount_paise = Column(Integer, nullable=False)
+    currency = Column(String(3), nullable=False, default="INR")
+    status = Column(String(50), nullable=False, default="created")
+    method = Column(String(50), nullable=True)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    failure_reason = Column(Text, nullable=True)
+    provider_payload = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    tenant = relationship("Tenant", back_populates="payments")
+    subscription = relationship("Subscription", back_populates="payments")
+    plan = relationship("Plan", back_populates="payments")
+
+
 class ChatbotQA(Base):
     """Stores predefined chatbot Q&A pairs for database-driven responses."""
     __tablename__ = "chatbot_qa"
@@ -281,18 +361,13 @@ class DemoSchedule(Base):
     __tablename__ = "demo_schedules"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
-
     # demo booking details
     demo_date = Column(String, nullable=False)
     time_slot = Column(String, nullable=False)
-
     # assigned meet link
     meeting_link = Column(String, nullable=False)
-
     # booking status
     status = Column(String, default="scheduled")
-
     created_at = Column(DateTime, default=datetime.utcnow)

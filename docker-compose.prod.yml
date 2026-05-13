@@ -1,7 +1,23 @@
-# Production Docker Compose - Backend only, connects to Supabase
-# Usage: docker-compose -f docker-compose.prod.yml up
+# Usage: chamber exec axiorapulse/production -- podman compose -f docker-compose.prod.yml up --build
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+        - VITE_FRONTEND_URL=${VITE_FRONTEND_URL}
+    ports:
+      - "3000:80"
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -9,12 +25,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL}  # Supabase connection string
+      - DATABASE_URL=${DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=production
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

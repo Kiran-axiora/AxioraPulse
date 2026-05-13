@@ -1,15 +1,6 @@
 import { create } from 'zustand';
 import API from '../api/axios';
-
-/**
- * useAuth.js — FastAPI-backed Zustand auth store
- *
- * Replaces Supabase auth completely. Uses JWT stored in localStorage.
- * initialize()  → GET /auth/me (hydrates profile + tenant on app load)
- * updateProfile → PATCH /auth/me/profile
- * updateTenant  → PATCH /tenants/me
- * signOut       → clear token
- */
+import { cognitoGetCurrentSession, cognitoSignOut } from '../lib/cognito';
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -21,18 +12,20 @@ const useAuthStore = create((set, get) => ({
   // ── Initialize: called once on app load ───────────────────────────────────
   initialize: async (force = false) => {
     if (get().initialized && !force) return;
-    set({ loading: true }); // Ensure loading state is set when re-initializing
-    const token = localStorage.getItem('token');
-    if (!token) {
-      set({ loading: false, initialized: true });
-      return;
-    }
+    set({ loading: true });
     try {
+      const session = await cognitoGetCurrentSession();
+      const idToken = session.getIdToken().getJwtToken();
+      localStorage.setItem('token', idToken);
+
+      // Link cognito_sub in DB for existing users whose sub isn't set yet
+      await API.post('/auth/sync', { id_token: idToken });
+
       const res = await API.get('/auth/me');
       const { user, profile, tenant } = res.data;
       set({ user, profile, tenant, loading: false, initialized: true });
     } catch {
-      // Token invalid or expired → clear it
+      cognitoSignOut();
       localStorage.removeItem('token');
       localStorage.removeItem('axiora_chatbot_history');
       localStorage.removeItem('axiora_chatbot_history_guest');
@@ -40,19 +33,22 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── checkSession: validate stored token (called by ProtectedRoute) ────────
+  // ── checkSession: validate stored session (called by ProtectedRoute) ──────
   checkSession: async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      set({ user: null, profile: null, tenant: null, loading: false });
-      return false;
-    }
     try {
+      const session = await cognitoGetCurrentSession();
+      const idToken = session.getIdToken().getJwtToken();
+      localStorage.setItem('token', idToken);
+
+      // Link cognito_sub in DB for existing users whose sub isn't set yet
+      await API.post('/auth/sync', { id_token: idToken });
+
       const res = await API.get('/auth/me');
       const { user, profile, tenant } = res.data;
       set({ user, profile, tenant, loading: false, initialized: true });
       return true;
     } catch {
+      cognitoSignOut();
       localStorage.removeItem('token');
       localStorage.removeItem('axiora_chatbot_history');
       localStorage.removeItem('axiora_chatbot_history_guest');
@@ -61,7 +57,7 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ── loadProfile: reload user data from /auth/me ───────────────────────────
+  // ── loadProfile: reload user data ────────────────────────────────────────
   loadProfile: async () => {
     try {
       const res = await API.get('/auth/me');
@@ -74,6 +70,7 @@ const useAuthStore = create((set, get) => ({
 
   // ── signOut ───────────────────────────────────────────────────────────────
   signOut: async () => {
+    cognitoSignOut();
     localStorage.removeItem('token');
     localStorage.removeItem('axiora_chatbot_history');
     localStorage.removeItem('axiora_chatbot_history_guest');
@@ -81,14 +78,14 @@ const useAuthStore = create((set, get) => ({
     window.location.href = '/login';
   },
 
-  // ── updateProfile: PATCH /auth/me/profile ────────────────────────────────
+  // ── updateProfile ─────────────────────────────────────────────────────────
   updateProfile: async (updates) => {
     const res = await API.patch('/auth/me/profile', updates);
     set({ profile: res.data });
     return res.data;
   },
 
-  // ── updateTenant: PATCH /tenants/me ──────────────────────────────────────
+  // ── updateTenant ──────────────────────────────────────────────────────────
   updateTenant: async (updates) => {
     const res = await API.patch('/tenants/me', updates);
     set({ tenant: res.data });

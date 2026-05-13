@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 });
 
 // Attach Bearer token to every request
@@ -18,10 +18,19 @@ API.interceptors.response.use(
     (err) => {
         if (err.response?.status === 401) {
             localStorage.removeItem("token");
-            // Skip redirect for auth init — initialize() catch handles it gracefully,
+            // Skip redirect for auth init paths — initialize() catch handles them gracefully,
             // preventing expired-token users from being bounced off public routes like /s/:slug
-            if (!err.config?.url?.includes('/auth/me')) {
+            const url = err.config?.url || '';
+            if (!url.includes('/auth/me') && !url.includes('/auth/sync')) {
                 window.location.href = "/login";
+            }
+        }
+        if (err.response?.status === 403) {
+            const detail = err.response?.data?.detail || '';
+            if (detail.toLowerCase().includes('upgrade') || detail.toLowerCase().includes('limit reached')) {
+                import('../hooks/usePaymentWall').then(({ default: usePaymentWall }) => {
+                    usePaymentWall.getState().show(detail);
+                });
             }
         }
         return Promise.reject(err);

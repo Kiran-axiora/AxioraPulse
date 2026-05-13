@@ -197,9 +197,9 @@ export default function SurveyList() {
         </div>
 
         {/* Status filters */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} className="np-survey-filters">
           {STATUS_FILTERS.map(f => (
-            <button key={f} onClick={() => setFilter(f)}
+            <button key={f} onClick={() => setFilter(f)} className="filter-chip"
               style={{ padding: '10px 16px', borderRadius: 999, border: `1px solid ${filter === f ? 'transparent' : 'rgba(22,15,8,0.08)'}`, cursor: 'pointer', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', transition: 'all 0.2s', background: filter === f ? 'var(--espresso)' : 'var(--warm-white)', color: filter === f ? 'var(--cream)' : 'rgba(22,15,8,0.5)' }}>
               {f === 'all' ? 'All' : SURVEY_STATUS[f]?.label || f}
             </button>
@@ -260,6 +260,7 @@ export default function SurveyList() {
                   {/* Kebab menu */}
                   <div style={{ position: 'relative' }} ref={el => menuRef.current[sv.id] = el}>
                     <button onClick={() => setMenu(menu === sv.id ? null : sv.id)}
+                      className="np-icon-btn"
                       aria-label="Survey options"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 8, color: 'rgba(22,15,8,0.3)', transition: 'all 0.2s', fontSize: 18, lineHeight: 1 }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--cream-deep)'; e.currentTarget.style.color = 'var(--espresso)'; }}

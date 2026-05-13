@@ -513,12 +513,92 @@ const CSS = `
 .lp-sr { opacity: 0; transform: translateY(44px); transition: opacity .9s ease, transform .9s cubic-bezier(.16,1,.3,1); }
 .lp-sr.vis { opacity: 1; transform: none; }
 .lp-sr-d1 { transition-delay: .1s; } .lp-sr-d2 { transition-delay: .2s; } .lp-sr-d3 { transition-delay: .3s; } .lp-sr-d4 { transition-delay: .4s; }
+
+/* ─── MOBILE RESPONSIVE ─── */
+@media (max-width: 768px) {
+  /* Nav */
+  .lp-nav { padding: 18px 20px; }
+  .lp-nav.stuck { padding: 14px 20px; }
+  .lp-nav-links { display: none; }
+  .lp-nav-burger { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: none; border: 1.5px solid rgba(22,15,8,.12); border-radius: 10px; cursor: pointer; }
+
+  /* Hero */
+  #lp-hero { padding-bottom: 60px; }
+  .lp-hero-wrap { grid-template-columns: 1fr; gap: 0; padding: 100px 20px 0; }
+  .lp-hero-cards { display: none; }
+  .lp-h-head { font-size: clamp(42px,11vw,64px); letter-spacing: -2px; }
+  .lp-h-sub { font-size: 16px; margin-bottom: 36px; }
+  .lp-h-ctas { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .lp-btn-fire { width: 100%; justify-content: center; }
+  .lp-scroll-cue { display: none; }
+  .lp-ticker-bar { padding: 0 20px; }
+  .lp-ticker-lbl { display: none; }
+
+  /* How it works */
+  #lp-how { padding: 80px 20px; }
+  .lp-sec-head { flex-direction: column; align-items: flex-start; gap: 20px; margin-bottom: 48px; }
+  .lp-sec-aside { text-align: left; max-width: 100%; }
+  .lp-steps { grid-template-columns: 1fr; gap: 3px; }
+  .lp-step { padding: 40px 28px; }
+  .lp-step:first-child { border-radius: 28px 28px 0 0; }
+  .lp-step:last-child { border-radius: 0 0 28px 28px; }
+
+  /* Builder */
+  #lp-builder { padding: 80px 20px; }
+  .lp-builder-inner { grid-template-columns: 1fr; gap: 48px; }
+
+  /* Analytics */
+  #lp-analytics { padding: 80px 20px; }
+  .lp-analytics-head { flex-direction: column; align-items: flex-start; gap: 20px; margin-bottom: 48px; }
+  .lp-kpi-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .lp-dash-grid { grid-template-columns: 1fr; }
+  .lp-dash-wrap { padding: 20px; }
+  .lp-dash-topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .lp-dash-badges { flex-wrap: wrap; }
+  .lp-kpi-val { font-size: 32px; }
+
+  /* Testimonials */
+  #lp-testimonials { padding: 80px 20px; }
+  .lp-testi-head { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 48px; }
+  .lp-testi-track { grid-template-columns: 1fr; }
+  .lp-tcard:nth-child(2) { transform: none; }
+  .lp-tcard:nth-child(2):hover { transform: translateY(-8px); }
+  .lp-tcard { padding: 32px 28px; }
+
+  /* Pricing */
+  #lp-pricing { padding: 80px 20px; }
+  .lp-pricing-head { margin-bottom: 48px; }
+  .lp-pricing-grid { grid-template-columns: 1fr; gap: 16px; }
+  .lp-pcard.pro { transform: none; }
+  .lp-pcard.pro:hover { transform: translateY(-6px); }
+  .lp-pcard { padding: 36px 28px; }
+  .lp-p-amt { font-size: 48px; }
+
+  /* Footer */
+  #lp-footer { padding: 60px 20px 32px; }
+  .lp-footer-top { grid-template-columns: 1fr; gap: 40px; margin-bottom: 40px; padding-bottom: 40px; }
+  .lp-footer-bottom { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .lp-f-desc { max-width: 100%; }
+
+  /* Diagonal cuts — collapse on mobile */
+  .lp-cut-r, .lp-cut-l { height: 30px; }
+
+  /* FAQ / other sections */
+  #lp-faq { padding: 80px 20px; }
+  .lp-faq-inner { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .lp-kpi-row { grid-template-columns: 1fr; }
+  .lp-q-types-grid { grid-template-columns: 1fr; }
+}
 `;
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export default function Landing() {
   const navigate = useNavigate();
   const onEnterApp = () => navigate('/login');
+  const onSignUp   = () => navigate('/register');
   const bodyRef = useRef(null);
   const { stopLoading } = useLoading();
   useEffect(() => { stopLoading(); }, [stopLoading]);
@@ -656,7 +736,8 @@ export default function Landing() {
           <li><a href="#lp-builder">Builder</a></li>
           <li><a href="#lp-analytics">Analytics</a></li>
           <li><a href="#lp-pricing">Pricing</a></li>
-          <li><button className="lp-nav-btn" onClick={onEnterApp}>Sign In</button></li>
+          <li><a href="#" onClick={e => { e.preventDefault(); onEnterApp(); }} style={{ opacity: .55 }}>Sign In</a></li>
+          <li><button className="lp-nav-btn" onClick={onSignUp}>Get Started</button></li>
         </ul>
       </nav>
 
@@ -680,17 +761,17 @@ export default function Landing() {
             </h1>
             <p className="lp-h-sub">Axiora Pulse is engineered on Likert-scale rigour, cognitive load reduction, and response-bias elimination — so every data point you collect is one you can defend in a boardroom.</p>
             <div className="lp-h-ctas">
-              <button className="lp-btn-fire" onClick={onEnterApp}>
-                <span>Design Your First Study</span>
+              <button className="lp-btn-fire" onClick={onSignUp}>
+                <span>Get Started Free</span>
                 <div className="lp-btn-fire-arr">
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 8L8 2M8 2H4M8 2V6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
               </button>
-              <button className="lp-btn-outline">
+              <button className="lp-btn-outline" onClick={onEnterApp}>
                 <div className="lp-play-ring">
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3.5 2.5L10 6.5L3.5 10.5V2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
                 </div>
-                See Methodology
+                Sign In
               </button>
             </div>
           </div>
@@ -849,7 +930,7 @@ export default function Landing() {
                 </div>
               ))}
             </div>
-            <button className="lp-btn-fire" onClick={onEnterApp}>
+            <button className="lp-btn-fire" onClick={onSignUp}>
               <span>Build a Study</span>
               <div className="lp-btn-fire-arr">
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 8L8 2M8 2H4M8 2V6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1018,7 +1099,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <button className="lp-pcard-btn" onClick={onEnterApp}>{p.btn}</button>
+              <button className="lp-pcard-btn" onClick={onSignUp}>{p.btn}</button>
             </div>
           ))}
         </div>

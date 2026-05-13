@@ -4,7 +4,7 @@ import API from '../api/axios';
 import AISurveySuggestions from '../components/AISurveySuggestions';
 import useAuthStore from '../hooks/useAuth';
 import { QUESTION_TYPES, isExpired } from '../lib/constants';
-import { Reorder, useDragControls } from 'framer-motion';
+import { Reorder, useDragControls, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useLoading } from '../context/LoadingContext';
 
@@ -15,7 +15,7 @@ const estTime = qs => `~${Math.max(1, Math.ceil(qs.length * 0.4))} min`;
 
 const fi = e => { e.target.style.borderColor = 'var(--coral)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,69,0,0.08)'; };
 const fo = e => { e.target.style.borderColor = 'rgba(22,15,8,0.1)'; e.target.style.boxShadow = 'none'; };
-const INP = { width: '100%', boxSizing: 'border-box', padding: '13px 17px', background: 'var(--warm-white)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: "'Fraunces', serif", fontSize: 15, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', resize: 'vertical' };
+const INP = { width: '100%', boxSizing: 'border-box', padding: '13px 17px', background: 'var(--warm-white)', border: '1.5px solid rgba(22,15,8,0.1)', borderRadius: 14, fontFamily: "'Fraunces', serif", fontSize: 16, color: 'var(--espresso)', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', resize: 'vertical' };
 const LBL = { fontFamily: "'Syne', sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.38)', display: 'block', marginBottom: 10 };
 
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")`;
@@ -46,7 +46,7 @@ function QCardCreate({ q, i, tc, qs, sQ, delQ, moveQ, addOpt, sOpt, delOpt }) {
         <div style={{ padding: '24px 28px 22px 32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div onPointerDown={e => { e.preventDefault(); dragControls.start(e); }} title="Drag to reorder"
+              <div className="drag-handle" onPointerDown={e => { e.preventDefault(); dragControls.start(e); }} title="Drag to reorder"
                 style={{ cursor: 'grab', padding: '4px 6px', borderRadius: 8, color: 'rgba(22,15,8,0.2)', display: 'flex', alignItems: 'center', transition: 'all 0.15s', touchAction: 'none' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--cream-deep)'; e.currentTarget.style.color = 'rgba(22,15,8,0.5)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(22,15,8,0.2)'; }}>
@@ -61,14 +61,14 @@ function QCardCreate({ q, i, tc, qs, sQ, delQ, moveQ, addOpt, sOpt, delOpt }) {
             </div>
             <div style={{ display: 'flex', gap: 2 }}>
               {[[-1, '\u2191'], [1, '\u2193']].map(([d, sym]) => (
-                <button key={d} onClick={() => moveQ(q._id, d)} disabled={(d === -1 && i === 0) || (d === 1 && i === qs.length - 1)}
+                <button key={d} onClick={() => moveQ(q._id, d)} disabled={(d === -1 && i === 0) || (d === 1 && i === qs.length - 1)} className="np-icon-btn"
                   style={{ width: 30, height: 30, borderRadius: 9, border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(22,15,8,0.25)', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', opacity: (d === -1 && i === 0) || (d === 1 && i === qs.length - 1) ? 0.18 : 1 }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--cream-deep)'; e.currentTarget.style.color = 'var(--espresso)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(22,15,8,0.25)'; }}>
                   {sym}
                 </button>
               ))}
-              <button onClick={() => delQ(q._id)} style={{ width: 30, height: 30, borderRadius: 9, border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(22,15,8,0.2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+              <button onClick={() => delQ(q._id)} className="np-icon-btn" style={{ width: 30, height: 30, borderRadius: 9, border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(22,15,8,0.2)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(214,59,31,0.08)'; e.currentTarget.style.color = 'var(--terracotta)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(22,15,8,0.2)'; }}>{String.fromCharCode(0x2715)}</button>
             </div>
@@ -142,7 +142,7 @@ function QCardCreate({ q, i, tc, qs, sQ, delQ, moveQ, addOpt, sOpt, delOpt }) {
             const delRow = ri => setMx({ ...mxData, rows: (mxData.rows || []).filter((_, j) => j !== ri) });
             const delCol = ci => setMx({ ...mxData, columns: (mxData.columns || []).filter((_, j) => j !== ci) });
             return (
-              <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <div className="mx-grid" style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                 {[['Rows', mxData.rows || [], addRow, updRow, delRow], ['Columns', mxData.columns || [], addCol, updCol, delCol]].map(([lbl, items, add, upd, del]) => (
                   <div key={lbl}>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(22,15,8,0.38)', marginBottom: 10 }}>{lbl}</div>
@@ -181,10 +181,14 @@ export default function SurveyCreate() {
     theme_color: '#FF4500', 
     allow_anonymous: true, 
     require_email: false, 
-    show_progress_bar: true 
+    show_progress_bar: true,
+    ai_context: ''
   });
   const [qs, sQs] = useState([newQ()]);
   const [dirty, setDirty] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingGen, setPendingGen] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [tmplTab, setTmplTab] = useState('gallery');
   const [catFilter, setCatFilter] = useState('All');
@@ -245,6 +249,48 @@ export default function SurveyCreate() {
   const addOpt = id => sQs(a => a.map(q => q._id===id ? { ...q, options:[...(q.options||[]),{label:'',value:''}] } : q));
   const sOpt = (id, i, v) => sQs(a => a.map(q => { if (q._id!==id) return q; const o=[...(q.options||[])]; o[i]={label:v,value:v.toLowerCase().replace(/\s+/g,'_')}; return {...q,options:o}; }));
   const delOpt = (id, i) => sQs(a => a.map(q => q._id!==id ? q : { ...q, options:q.options.filter((_,j)=>j!==i) }));
+
+  const applyAIGeneration = (data) => {
+    sf(p => ({
+      ...p,
+      title: data.title || '',
+      description: data.description || '',
+      welcome_message: data.welcome_message || ''
+    }));
+    
+    if (data.questions && data.questions.length > 0) {
+      sQs(data.questions.map((q, i) => ({
+        ...newQ(),
+        _id: Math.random().toString(36).slice(2) + i,
+        question_text: q.text,
+        question_type: q.type,
+        options: q.options || (isMx(q.type) ? { rows: [], columns: [] } : [])
+      })));
+    }
+    setDirty(true);
+    setPendingGen(null);
+    setShowConfirm(false);
+    toast.success('Survey generated successfully!');
+  };
+
+  const handleAIGenerate = async () => {
+    if (!f.ai_context.trim()) return toast.error('Please describe your survey first');
+    setAiGenerating(true);
+    try {
+      const { data } = await API.post('/ai/generate', { aiContext: f.ai_context });
+      if (f.title || qs.length > 1 || (qs.length === 1 && qs[0].question_text)) {
+        setPendingGen(data);
+        setShowConfirm(true);
+      } else {
+        applyAIGeneration(data);
+      }
+    } catch (e) {
+      toast.error('Failed to generate survey');
+      console.error(e);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   async function save(status = 'draft') {
     if (!f.title.trim()) return toast.error('Title is required');
@@ -331,7 +377,32 @@ export default function SurveyCreate() {
         .sc-tab-btn::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; border-radius:1px; background:var(--coral); transform:scaleX(0); transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); transform-origin:left; }
         .sc-tab-btn.active::after { transform:scaleX(1); }
         @media (max-width: 1040px) { .sc-grid { grid-template-columns: 1fr !important; } .sc-sidebar { display:none !important; } }
+        @media (max-width: 768px) {
+          .sc-sidebar { display: flex !important; }
+          .q-card > div { padding: 14px 14px 14px 18px !important; }
+          .drag-handle { display: none !important; }
+          .opt-input { font-size: 16px !important; }
+          .mx-grid { grid-template-columns: 1fr !important; }
+          .sc-2col { grid-template-columns: 1fr !important; }
+        }
       `}</style>
+
+      {/* ── OVERWRITE CONFIRMATION MODAL ── */}
+      {showConfirm && (
+        <div style={{ position:'fixed',inset:0,zIndex:9999,background:'rgba(22,15,8,0.6)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',padding:24 }}>
+          <div style={{ background:'var(--warm-white)',borderRadius:24,padding:32,width:'100%',maxWidth:480,boxShadow:'0 32px 80px rgba(22,15,8,0.2)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: 'rgba(214,59,31,0.1)', color: 'var(--terracotta)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}>⚠️</div>
+            <h3 style={{ fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:24,margin:'0 0 12px 0',color:'var(--espresso)' }}>Overwrite existing survey?</h3>
+            <p style={{ fontFamily:"'Fraunces',serif",fontSize:15,color:'rgba(22,15,8,0.5)',lineHeight:1.6,margin:'0 0 24px 0' }}>
+              This will replace your current survey title, description, welcome message, and all questions with the newly AI-generated ones. This action cannot be undone.
+            </p>
+            <div style={{ display:'flex',gap:12,justifyContent:'flex-end' }}>
+              <button onClick={() => { setShowConfirm(false); setPendingGen(null); }} style={{ padding:'12px 24px',borderRadius:999,border:'1.5px solid rgba(22,15,8,0.1)',background:'transparent',fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:11,letterSpacing:'0.1em',textTransform:'uppercase',color:'rgba(22,15,8,0.5)',cursor:'pointer' }}>Cancel</button>
+              <button onClick={() => applyAIGeneration(pendingGen)} style={{ padding:'12px 24px',borderRadius:999,border:'none',background:'var(--terracotta)',color:'#fff',fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:11,letterSpacing:'0.1em',textTransform:'uppercase',cursor:'pointer' }}>Replace Everything</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TEMPLATE GALLERY MODAL ── */}
       {showTemplates && (
@@ -533,17 +604,73 @@ export default function SurveyCreate() {
           {/* ── DETAILS TAB ── */}
           {tab === 'details' && (
             <div style={{ display:'flex',flexDirection:'column',gap:28 }}>
+              {/* AI Context Box */}
+              <div style={{ background: 'rgba(255,69,0,0.03)', padding: 24, borderRadius: 20, border: `1.5px solid ${tc}30` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <span style={{ fontSize: 16 }}>✨</span>
+                  <h3 style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: 'var(--espresso)' }}>AI Survey Generator</h3>
+                </div>
+                <label style={LBL}>Describe your survey</label>
+                <textarea 
+                  value={f.ai_context} 
+                  onChange={e => s('ai_context', e.target.value)} 
+                  placeholder="e.g. I need a customer satisfaction survey for my new coffee shop. Ask about coffee quality, ambiance, and service." 
+                  rows={3} 
+                  style={{...INP, borderRadius: 16, marginBottom: 16, background: 'var(--warm-white)'}} 
+                  onFocus={fi} 
+                  onBlur={fo}
+                />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button 
+                    onClick={handleAIGenerate} 
+                    disabled={aiGenerating || !f.ai_context.trim()}
+                    style={{
+                      padding: '12px 24px', borderRadius: 999, border: 'none', background: tc, color: '#fff', 
+                      fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', 
+                      cursor: (aiGenerating || !f.ai_context.trim()) ? 'not-allowed' : 'pointer', 
+                      opacity: (aiGenerating || !f.ai_context.trim()) ? 0.6 : 1,
+                      display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 0.2s',
+                      boxShadow: (aiGenerating || !f.ai_context.trim()) ? 'none' : `0 4px 14px ${tc}40`
+                    }}
+                  >
+                    {aiGenerating ? (
+                      <>
+                        <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
+                        Generating...
+                      </>
+                    ) : (
+                      <>Generate Title, Description & Questions</>
+                    )}
+                  </button>
+                  {f.ai_context.trim() && (
+                    <button
+                      onClick={() => s('ai_context', '')}
+                      disabled={aiGenerating}
+                      style={{
+                        padding: '11px 20px', borderRadius: 999, border: `1.5px solid rgba(22,15,8,0.1)`, background: 'transparent',
+                        fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
+                        color: 'rgba(22,15,8,0.5)', cursor: aiGenerating ? 'not-allowed' : 'pointer', transition: 'all 0.2s', opacity: aiGenerating ? 0.6 : 1
+                      }}
+                      onMouseEnter={e => { if (!aiGenerating) { e.currentTarget.style.color = 'var(--terracotta)'; e.currentTarget.style.borderColor = 'rgba(214,59,31,0.3)'; e.currentTarget.style.background = 'rgba(214,59,31,0.05)'; } }}
+                      onMouseLeave={e => { if (!aiGenerating) { e.currentTarget.style.color = 'rgba(22,15,8,0.5)'; e.currentTarget.style.borderColor = 'rgba(22,15,8,0.1)'; e.currentTarget.style.background = 'transparent'; } }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label style={LBL}>Survey Title *</label>
                 <input value={f.title} onChange={e=>s('title',e.target.value)} placeholder="e.g. Q3 Customer Satisfaction Study"
                   style={{...INP,fontSize:20,fontWeight:500,padding:'18px 22px',letterSpacing:'-0.4px',borderRadius:18,background:'var(--warm-white)'}} onFocus={fi} onBlur={fo}/>
               </div>
-              <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
+              <div className="sc-2col" style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
                 <div><label style={LBL}>Description</label><textarea value={f.description} onChange={e=>s('description',e.target.value)} placeholder="What's this research about?" rows={4} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/></div>
                 <div><label style={LBL}>Welcome Message</label><textarea value={f.welcome_message} onChange={e=>s('welcome_message',e.target.value)} placeholder="Shown on the landing screen before Q1" rows={4} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/></div>
               </div>
               <div><label style={LBL}>Thank You Message</label><textarea value={f.thank_you_message} onChange={e=>s('thank_you_message',e.target.value)} placeholder="Shown after submission" rows={2} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/></div>
-              <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
+              <div className="sc-2col" style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:22 }}>
                 <div><label style={LBL}>Expires</label><input type="datetime-local" value={f.expires_at} onChange={e=>s('expires_at',e.target.value)} style={{...INP,borderRadius:16}} onFocus={fi} onBlur={fo}/></div>
                 <div>
                   <label style={LBL}>Theme Colour</label>
@@ -579,7 +706,7 @@ export default function SurveyCreate() {
                 Add Question
               </button>
 
-              <AISurveySuggestions survey={f} questions={qs} tc={tc}
+              <AISurveySuggestions survey={f} questions={qs} tc={tc} aiContext={f.ai_context}
                 onAdd={q => sQs(a => [...a, { ...newQ(), ...q, _id:'new_'+Math.random().toString(36).slice(2) }])} />
             </div>
           )}

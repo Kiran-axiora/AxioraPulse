@@ -18,17 +18,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from db.database import engine, Base
 from db import models  # noqa: F401 — needed so Base.metadata is populated
 from routes.demo import router as demo_router
 from routes.auth      import router as auth_router
 from routes.chat import router as chat_router
-
 from routes.users     import router as users_router
 from routes.tenants   import router as tenants_router
 from routes.surveys   import router as surveys_router
@@ -38,10 +35,10 @@ from routes.dashboard import router as dashboard_router
 from routes.utils     import router as utils_router
 from routes.ai        import router as ai_router
 from routes.public    import router as public_router
+from routes.payments  import router as payments_router
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi.responses import JSONResponse
-
+from core import config
 from core.rate_limiter import limiter
 
 # ── Create tables ─────────────────────────────────────────────────────────────
@@ -67,7 +64,14 @@ app.add_middleware(SlowAPIMiddleware)
 # allow_credentials=True is NOT required.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "*",
+        *([config.FRONTEND_URL] if config.FRONTEND_URL else []),
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,15 +94,28 @@ app.include_router(dashboard_router)
 app.include_router(utils_router)
 app.include_router(ai_router)
 app.include_router(chat_router)
+app.include_router(payments_router)
 app.include_router(demo_router)
 app.include_router(public_router)
 
 
-
 # ── Health ────────────────────────────────────────────────────────────────────
-@app.get("/health", tags=["health"])
-def health():
-    return {"status": "ok", "service": "Nexora Pulse API"}
+@app.get("/health", tags=["health"]) 
+def health(): 
+    try: 
+        with engine.connect() as connection: 
+            connection.execute( text("SELECT 1") ) 
+        return { 
+            "status": "healthy", 
+            "service": "Nexora Pulse API", 
+            "database": "connected" 
+            } 
+    except Exception as e: 
+        return { 
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e) 
+            }
 
 
 @app.get("/", tags=["health"])

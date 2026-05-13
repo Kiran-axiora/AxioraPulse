@@ -27,6 +27,7 @@ from core.rate_limiter import limiter
 from fastapi import Request
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+from fastapi import Query
 
 from db.database import get_db
 from db.models import (
@@ -40,6 +41,7 @@ from schemas import (
     ResponseOut, AnswerOut, FeedbackOut,
 )
 from dependencies import get_current_user
+from services.feature_gate import require_feature
 
 
 router = APIRouter(prefix="/surveys", tags=["surveys"])
@@ -105,22 +107,40 @@ def _upsert_questions(survey_id: uuid.UUID, questions: List[QuestionIn], db: Ses
 # ── List ──────────────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=List[SurveyOut])
+@limiter.limit("20/minute")
 def list_surveys(
+    request: Request,
     q: str = None,
+    skip: int = 0,
+    limit: int = Query(10, le=100),
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+
     query = (
         db.query(Survey)
         .options(joinedload(Survey.questions))
         .options(joinedload(Survey.creator))
         .filter(Survey.tenant_id == current_user.tenant_id)
     )
+
     if q:
-        query = query.filter(Survey.title.ilike(f"%{q}%"))
-    
-    surveys = query.order_by(Survey.created_at.desc()).all()
-    return [SurveyOut.model_validate(s) for s in surveys]
+        query = query.filter(
+            Survey.title.ilike(f"%{q}%")
+        )
+
+    surveys = (
+        query
+        .order_by(Survey.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        SurveyOut.model_validate(s)
+        for s in surveys
+    ]
 
 
 # ── Public: fetch by slug (no auth required — SurveyRespond.jsx) ─────────────
@@ -150,10 +170,11 @@ def get_survey_by_slug( request: Request, slug: str, db: Session = Depends(get_d
 @router.post("/", response_model=SurveyOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def create_survey(
-    request: Request,  
+    request: Request,
     body: SurveyCreate,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _gate: None = Depends(require_feature("create_survey")),
 ):
     _require_creator(current_user)
 
@@ -212,7 +233,9 @@ def create_survey(
 # ── Get single ────────────────────────────────────────────────────────────────
 
 @router.get("/{survey_id}", response_model=SurveyOut)
+@limiter.limit("20/minute")
 def get_survey(
+    request: Request,
     survey_id: uuid.UUID,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -549,6 +572,7 @@ def revoke_share(
 def get_survey_responses(
     request: Request,  
     survey_id: uuid.UUID,
+    skip: int = 0, limit: int = Query(10, le=100),
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -563,7 +587,10 @@ def get_survey_responses(
         .options(joinedload(SurveyResponse.survey_answers))
         .filter(SurveyResponse.survey_id == survey_id)
         .order_by(SurveyResponse.started_at.desc())
+        .offset(skip)
+        .limit(limit)
         .all()
+
     )
 
     return [ResponseOut.model_validate(r) for r in responses]
@@ -597,7 +624,9 @@ def get_survey_answers(
 # ── Feedback for a survey ─────────────────────────────────────────────────────
 
 @router.get("/{survey_id}/feedback", response_model=List[FeedbackOut])
+@limiter.limit("10/minute")
 def get_survey_feedback(
+    request: Request,
     survey_id: uuid.UUID,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
