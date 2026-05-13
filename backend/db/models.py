@@ -9,7 +9,7 @@ so the frontend data shapes remain unchanged.
 import uuid
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Integer, Text,
-    ForeignKey, Enum as SAEnum, UniqueConstraint, ARRAY
+    ForeignKey, Enum as SAEnum, UniqueConstraint, ARRAY, text
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -256,6 +256,26 @@ class SurveyShare(Base):
     # relationships
     survey = relationship("Survey", back_populates="shares")
     user   = relationship("UserProfile")
+
+
+class ChatbotQA(Base):
+    """Stores predefined chatbot Q&A pairs for database-driven responses."""
+    __tablename__ = "chatbot_qa"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String(500), nullable=False, unique=True)
+    answer = Column(Text, nullable=False)
+    keywords = Column(ARRAY(String(100)), nullable=True)
+    category = Column(String(100), nullable=True)
+    quick_replies = Column(ARRAY(String(100)), nullable=True)
+    is_active = Column(Boolean, nullable=False, server_default=text("TRUE"), default=True)
+    sort_order = Column(Integer, default=0)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    tenant = relationship("Tenant")
+
 
 class DemoSchedule(Base):
     __tablename__ = "demo_schedules"

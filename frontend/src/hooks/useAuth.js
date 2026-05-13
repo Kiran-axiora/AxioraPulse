@@ -34,6 +34,8 @@ const useAuthStore = create((set, get) => ({
     } catch {
       // Token invalid or expired → clear it
       localStorage.removeItem('token');
+      localStorage.removeItem('axiora_chatbot_history');
+      localStorage.removeItem('axiora_chatbot_history_guest');
       set({ user: null, profile: null, tenant: null, loading: false, initialized: true });
     }
   },
@@ -52,6 +54,8 @@ const useAuthStore = create((set, get) => ({
       return true;
     } catch {
       localStorage.removeItem('token');
+      localStorage.removeItem('axiora_chatbot_history');
+      localStorage.removeItem('axiora_chatbot_history_guest');
       set({ user: null, profile: null, tenant: null, loading: false });
       return false;
     }
@@ -71,6 +75,8 @@ const useAuthStore = create((set, get) => ({
   // ── signOut ───────────────────────────────────────────────────────────────
   signOut: async () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('axiora_chatbot_history');
+    localStorage.removeItem('axiora_chatbot_history_guest');
     set({ user: null, profile: null, tenant: null, initialized: false });
     window.location.href = '/login';
   },
