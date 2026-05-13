@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatbot } from './useChatbot';
 import useAuthStore from '../../hooks/useAuth';
@@ -100,6 +100,16 @@ const ChatbotWidget = memo(function ChatbotWidget({
 
   const positionClass = position === 'bottom-left' ? 'fab-left' : 'fab-right';
 
+  // Toggle body class for mobile scroll lock
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('chatbot-open');
+    } else {
+      document.body.classList.remove('chatbot-open');
+    }
+    return () => document.body.classList.remove('chatbot-open');
+  }, [isOpen]);
+
   return (
     <div
       className={`chatbot-root ${positionClass}`}
@@ -116,6 +126,7 @@ const ChatbotWidget = memo(function ChatbotWidget({
         isTyping={isTyping}
         error={error}
         inputRef={inputRef}
+        position={position}
         onClose={close}
         onMinimize={minimize}
         onToggleTheme={toggleTheme}

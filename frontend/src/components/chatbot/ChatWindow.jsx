@@ -73,6 +73,7 @@ const ChatWindow = memo(function ChatWindow({
   isTyping,
   error,
   inputRef,
+  position = 'bottom-right',
   onClose,
   onMinimize,
   onToggleTheme,
@@ -82,13 +83,37 @@ const ChatWindow = memo(function ChatWindow({
   onQuickReply,
   onDismissError,
 }) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 500;
+  const origin = position === 'bottom-left' ? 'bottom left' : 'bottom right';
+
+  const responsiveVariants = {
+    hidden: {
+      opacity: 0,
+      scale: isMobile ? 1 : 0.88,
+      y: isMobile ? 100 : 24,
+      transformOrigin: origin,
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: isMobile ? 400 : 340, damping: isMobile ? 35 : 28 },
+    },
+    exit: {
+      opacity: 0,
+      scale: isMobile ? 1 : 0.88,
+      y: isMobile ? 100 : 24,
+      transition: { duration: 0.18, ease: 'easeIn' },
+    },
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           id="chatbot-window"
-          className={`chat-window ${theme}`}
-          variants={windowVariants}
+          className={`chat-window ${theme} ${isMobile ? 'full-screen' : ''}`}
+          variants={responsiveVariants}
           initial="hidden"
           animate="visible"
           exit="exit"
