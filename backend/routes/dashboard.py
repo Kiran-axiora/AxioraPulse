@@ -14,11 +14,13 @@ from db.models import Survey, SurveyResponse, UserProfile, ResponseStatusEnum, S
 from schemas import DashboardStats, RecentSurvey
 from dependencies import get_current_user
 from fastapi import Request
+from fastapi_cache.decorator import cache
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/stats")
 @limiter.limit("30/minute")
+@cache(expire=60)
 def dashboard_stats(
     request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),
@@ -77,6 +79,7 @@ def dashboard_stats(
 
 @router.get("/recent")
 @limiter.limit("30/minute")
+@cache(expire=60)
 def recent_surveys(
     request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),
@@ -119,6 +122,7 @@ def recent_surveys(
 
 @router.get("/feed")
 @limiter.limit("20/minute")
+@cache(expire=60)
 def dashboard_feed(
     request: Request,   # ✅ ADD THIS
     current_user: UserProfile = Depends(get_current_user),

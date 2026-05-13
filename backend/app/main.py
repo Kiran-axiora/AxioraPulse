@@ -2,26 +2,21 @@
 app/main.py
 ───────────
 FastAPI application entry-point.
-
-Startup sequence:
-  1. Create all DB tables (SQLAlchemy create_all — code-first migrations)
-  2. Register CORS middleware (allows the Vite dev server at localhost:5173)
-  3. Mount all route modules
-  4. Health-check endpoint
 """
 
 import sys
 import os
+from contextlib import asynccontextmanager
 
-# Ensure the backend root is on the path so `db`, `routes`, etc. resolve
+# Ensure the backend root is on the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
-from db.database import engine, Base
-from db import models  # noqa: F401 — needed so Base.metadata is populated
-from routes.demo import router as demo_router
+from db.database import engine
 from routes.auth      import router as auth_router
 from routes.users     import router as users_router
 from routes.tenants   import router as tenants_router
@@ -32,19 +27,29 @@ from routes.dashboard import router as dashboard_router
 from routes.utils     import router as utils_router
 from routes.ai        import router as ai_router
 from routes.uploads   import router as uploads_router
+from routes.demo      import router as demo_router
+
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi.responses import JSONResponse
-from sqlalchemy import text
-from db.database import engine
-from routes.demo import router as demo_router
 from core import config
 from core.rate_limiter import limiter
+from core.cache import user_aware_key_builder
 
-# ── Create tables ─────────────────────────────────────────────────────────────
-# In production, replace this with Alembic migrations.
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
-
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    redis = aioredis.from_url(config.REDIS_URL, encoding="utf8", decode_responses=True)
+    FastAPICache.init(
+        RedisBackend(redis),
+        prefix="fastapi-cache",
+        key_builder=user_aware_key_builder
+    )
+    yield
+    # Shutdown logic (optional)
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -53,18 +58,16 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan
 )
+
 # ── Rate Limiter ─────────────────────────────────────────────────────────────
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Use wildcard origins and disable credentials for maximum development compatibility.
-# Since we use Bearer tokens (Authorization header) rather than cookies, 
-# allow_credentials=True is NOT required.
 app.add_middleware(
     CORSMiddleware,
-  
     allow_origins=[
         *([config.FRONTEND_URL] if config.FRONTEND_URL else []),
         "http://localhost:5173",
@@ -76,6 +79,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 @app.exception_handler(RateLimitExceeded)
 def rate_limit_handler(request, exc):
     return JSONResponse(
@@ -96,26 +100,23 @@ app.include_router(ai_router)
 app.include_router(uploads_router)
 app.include_router(demo_router)
 
-
-
 # ── Health ────────────────────────────────────────────────────────────────────
-@app.get("/health", tags=["health"]) 
-def health(): 
-    try: 
-        with engine.connect() as connection: 
-            connection.execute( text("SELECT 1") ) 
-        return { 
-            "status": "healthy", 
-            "service": "Nexora Pulse API", 
-            "database": "connected" 
-            } 
-    except Exception as e: 
-        return { 
+@app.get("/health", tags=["health"])
+def health():
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return {
+            "status": "healthy",
+            "service": "Nexora Pulse API",
+            "database": "connected"
+        }
+    except Exception as e:
+        return {
             "status": "unhealthy",
             "database": "disconnected",
-            "error": str(e) 
-            }
-
+            "error": str(e)
+        }
 
 @app.get("/", tags=["health"])
 def root():

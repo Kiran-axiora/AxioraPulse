@@ -14,6 +14,8 @@ ANTHROPIC_KEY = os.getenv("ANTHROPIC_KEY")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")  # e.g. https://app.axiorapulse.com
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
 
 if not DATABASE_URL:
     raise Exception("DATABASE_URL is missing")

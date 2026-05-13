@@ -15,3 +15,5 @@ slowapi
 requests
 PyPDF2
 python-docx
+redis
+fastapi-cache2[redis]
