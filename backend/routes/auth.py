@@ -106,13 +106,16 @@ def sync(
         )
 
     # Brand new user — create tenant + profile
-    if not body.tenant_name:
-        raise HTTPException(400, "tenant_name is required for new users")
+    # Fallback: If tenant_name is missing (e.g. login of a user migrated in Cognito but missing in RDS),
+    # generate a default one to avoid blocking sign-in.
+    t_name = body.tenant_name
+    if not t_name:
+        t_name = f"{name or email.split('@')[0]}'s Org"
 
     tenant = Tenant(
         id=uuid.uuid4(),
-        name=body.tenant_name,
-        slug=_slugify(body.tenant_slug or body.tenant_name),
+        name=t_name,
+        slug=_slugify(body.tenant_slug or t_name),
     )
     db.add(tenant)
     db.flush()
