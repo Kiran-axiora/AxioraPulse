@@ -41,6 +41,7 @@ from schemas import (
     ResponseOut, AnswerOut, FeedbackOut,
 )
 from dependencies import get_current_user
+from fastapi_cache.decorator import cache
 
 
 router = APIRouter(prefix="/surveys", tags=["surveys"])
@@ -212,6 +213,7 @@ def list_surveys(
 
 @router.get("/slug/{slug}", response_model=SurveyOut)
 @limiter.limit("20/minute")
+@cache(expire=300)
 def get_survey_by_slug( request: Request, slug: str, db: Session = Depends(get_db)):
     survey = (
         db.query(Survey)
