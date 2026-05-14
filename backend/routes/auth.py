@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -26,8 +25,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 
-# ---------------- HELPERS ----------------
-
 def _slugify(text: str):
     text = text.lower().strip()
     text = re.sub(r"[^\w\s-]", "", text)
@@ -49,19 +46,28 @@ def _build_auth_response(user: UserProfile, db: Session):
     }
 
 
-# ---------------- ROUTES ----------------
-
 @router.post("/register", response_model=AuthResponse)
 @limiter.limit("3/minute")
 def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(UserProfile).filter(UserProfile.email == body.email).first():
         raise HTTPException(400, "Email already exists")
 
+    if body.account_type == "organization":
+        if not body.tenant_name:
+            raise HTTPException(400, "Organization name is required")
+
+        tenant_name = body.tenant_name
+        tenant_slug = body.tenant_slug or _slugify(body.tenant_name)
+    else:
+        tenant_name = "Individual Users"
+        tenant_slug = "individual-users"
+
     tenant = Tenant(
         id=uuid.uuid4(),
-        name=body.tenant_name,
-        slug=_slugify(body.tenant_name),
+        name=tenant_name,
+        slug=tenant_slug,
     )
+
     db.add(tenant)
     db.flush()
 
@@ -111,7 +117,11 @@ def refresh(request: Request, credentials: HTTPAuthorizationCredentials = Depend
 
 @router.get("/me", response_model=MeResponse)
 @limiter.limit("30/minute")
-def me(request: Request, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+def me(
+    request: Request,
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     tenant = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
     profile = UserProfileOut.model_validate(current_user)
 
@@ -124,7 +134,12 @@ def me(request: Request, current_user: UserProfile = Depends(get_current_user), 
 
 @router.patch("/me/profile")
 @limiter.limit("20/minute")
-def update_profile(request: Request, body: UserProfileUpdate, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_profile(
+    request: Request,
+    body: UserProfileUpdate,
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     current_user.full_name = body.full_name
     db.commit()
     db.refresh(current_user)
@@ -133,7 +148,12 @@ def update_profile(request: Request, body: UserProfileUpdate, current_user: User
 
 @router.patch("/me/password")
 @limiter.limit("5/minute")
-def change_password(request: Request, body: PasswordUpdate, current_user: UserProfile = Depends(get_current_user), db: Session = Depends(get_db)):
+def change_password(
+    request: Request,
+    body: PasswordUpdate,
+    current_user: UserProfile = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     current_user.password_hash = hash_password(body.new_password)
     db.commit()
     return {"message": "Password updated"}
