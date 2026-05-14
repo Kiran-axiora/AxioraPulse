@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PageLoader from "./pages/PageLoader";
+import ChatbotWidget from './components/chatbot';
 
 // ── Loading context ───────────────────────────────────────────────
 import { LoadingProvider, useLoading } from './context/LoadingContext';
@@ -65,6 +66,12 @@ function AppRoutes() {
     <>
       <GlobalSpinner />
       <PaymentWall />
+
+      {/* ── AI Chatbot Widget (global, fixed position) ── */}
+      <ChatbotWidget
+        apiEndpoint="/api/chat"
+        position="bottom-right"
+      />
 
       <Toaster
         position="bottom-right"

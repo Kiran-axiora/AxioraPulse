@@ -27,6 +27,8 @@ const useAuthStore = create((set, get) => ({
     } catch {
       cognitoSignOut();
       localStorage.removeItem('token');
+      localStorage.removeItem('axiora_chatbot_history');
+      localStorage.removeItem('axiora_chatbot_history_guest');
       set({ user: null, profile: null, tenant: null, loading: false, initialized: true });
     }
   },
@@ -48,6 +50,8 @@ const useAuthStore = create((set, get) => ({
     } catch {
       cognitoSignOut();
       localStorage.removeItem('token');
+      localStorage.removeItem('axiora_chatbot_history');
+      localStorage.removeItem('axiora_chatbot_history_guest');
       set({ user: null, profile: null, tenant: null, loading: false });
       return false;
     }
@@ -68,6 +72,8 @@ const useAuthStore = create((set, get) => ({
   signOut: async () => {
     cognitoSignOut();
     localStorage.removeItem('token');
+    localStorage.removeItem('axiora_chatbot_history');
+    localStorage.removeItem('axiora_chatbot_history_guest');
     set({ user: null, profile: null, tenant: null, initialized: false });
     window.location.href = '/login';
   },

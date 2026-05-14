@@ -21,8 +21,8 @@
 
 <body>
   <!-- Branded cursor — lives outside React so it never remounts -->
-  <div id="np-cur-dot"  aria-hidden="true" style="position:fixed;pointer-events:none;z-index:99999;width:6px;height:6px;background:#FF4500;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 0 0 3.5px rgba(255,69,0,.18);transition:width .18s,height .18s,opacity .18s;will-change:left,top;top:-100px;left:-100px;"></div>
-  <div id="np-cur-ring" aria-hidden="true" style="position:fixed;pointer-events:none;z-index:99998;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 1px rgba(22,15,8,.2),0 0 0 2px rgba(255,255,255,.4);transition:width .32s,height .32s,opacity .32s;opacity:.5;will-change:left,top;top:-100px;left:-100px;"></div>
+  <div id="np-cur-dot"  aria-hidden="true" style="position:fixed;pointer-events:none;z-index:2000000;width:6px;height:6px;background:#FF4500;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px rgba(255,255,255,.8),0 0 0 3.5px rgba(255,69,0,.18);transition:width .18s,height .18s,opacity .18s;will-change:left,top;top:-100px;left:-100px;"></div>
+  <div id="np-cur-ring" aria-hidden="true" style="position:fixed;pointer-events:none;z-index:1999999;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 1px rgba(22,15,8,.2),0 0 0 2px rgba(255,255,255,.4);transition:width .32s,height .32s,opacity .32s;opacity:.5;will-change:left,top;top:-100px;left:-100px;"></div>
   <script>
     (function () {
       // No pointer device — leave native cursor alone and skip the RAF loop

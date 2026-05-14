@@ -13,4 +13,5 @@ psycopg2-binary==2.9.11
 anthropic==0.40.0
 slowapi
 requests
+httpx
 razorpay==1.4.2
