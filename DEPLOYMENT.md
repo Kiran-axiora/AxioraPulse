@@ -12,7 +12,7 @@ docker-compose.yml
 - Database included for convenience
 - Code mounted as volume for hot-reload
 
-### Production (AWS ECS + Supabase)
+### Production (AWS ECS + Aurora/RDS)
 ```
 ECR (Docker Image)
     ↓
@@ -20,10 +20,10 @@ ECS Task Definition
     ↓
 ECS Service/Fargate
     ↓
-Supabase PostgreSQL (external)
+AWS Aurora/RDS PostgreSQL (external)
 ```
 - **Only backend image** in ECR
-- Database managed externally by Supabase
+- Database managed by AWS Aurora or RDS
 - Scalable, managed infrastructure
 
 ---
@@ -38,7 +38,7 @@ aws configure
 
 ### Create ECR repository
 ```bash
-aws ecr create-repository --repository-name axiora-backend --region us-east-1
+aws ecr create-repository --repository-name axiora-backend --region ap-south-1
 ```
 
 ### Build and push Docker image
@@ -48,112 +48,53 @@ docker build -f backend/Dockerfile.prod -t axiora-backend:latest ./backend
 
 # Tag for ECR
 docker tag axiora-backend:latest \
-  123456789.dkr.ecr.us-east-1.amazonaws.com/axiora-backend:latest
+  217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora-backend:latest
 
 # Login to ECR
-aws ecr get-login-password --region us-east-1 | \
+aws ecr get-login-password --region ap-south-1 | \
   docker login --username AWS --password-stdin \
-  123456789.dkr.ecr.us-east-1.amazonaws.com
+  217757579310.dkr.ecr.ap-south-1.amazonaws.com
 
 # Push to ECR
-docker push 123456789.dkr.ecr.us-east-1.amazonaws.com/axiora-backend:latest
+docker push 217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora-backend:latest
 ```
 
 ---
 
-## Step 2: Set up Supabase Database
+## Step 2: Set up Aurora/RDS Database
 
-### Create Supabase project
-1. Go to [supabase.com](https://supabase.com)
-2. Create new project
-3. Copy the connection string from Settings → Database
-   - Format: `postgresql://postgres:[PASSWORD]@[PROJECT-ID].supabase.co:5432/postgres?sslmode=require`
+### Create Database Instance
+1. Go to **RDS → Create database**
+2. Choose **Aurora (PostgreSQL Compatibility)** or **RDS PostgreSQL**
+3. Configure instance class, storage, and credentials
+4. Note the **Endpoint** and **Port** (default 5432)
 
 ### Run migrations
 ```bash
-# Connect to Supabase and run Alembic migrations
-DATABASE_URL="postgresql://..." alembic upgrade head
+# Connect to Aurora/RDS and run Alembic migrations
+DATABASE_URL="postgresql://user:pass@endpoint:5432/dbname" alembic upgrade head
 ```
 
 ---
 
 ## Step 3: Create ECS Task Definition
 
-### JSON Task Definition (`ecs-task-definition.json`)
-```json
-{
-  "family": "axiora-backend",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "containerDefinitions": [
-    {
-      "name": "backend",
-      "image": "123456789.dkr.ecr.us-east-1.amazonaws.com/axiora-backend:latest",
-      "portMappings": [
-        {
-          "containerPort": 8000,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {
-          "name": "ENVIRONMENT",
-          "value": "production"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789:secret:axiora-db-url"
-        },
-        {
-          "name": "SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789:secret:axiora-secret-key"
-        },
-        {
-          "name": "OPENAI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789:secret:openai-key"
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/axiora-backend",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
-        "interval": 30,
-        "timeout": 10,
-        "retries": 3,
-        "startPeriod": 40
-      }
-    }
-  ],
-  "executionRoleArn": "arn:aws:iam::123456789:role/ecsTaskExecutionRole"
-}
-```
+### JSON Task Definition (`ecs-task-def.json`)
+See `backend/ecs-task-def.json` for the full configuration.
 
-### Store secrets in AWS Secrets Manager
+### Store secrets in AWS SSM Parameter Store
 ```bash
 # Store DATABASE_URL
-aws secretsmanager create-secret \
-  --name axiora-db-url \
-  --secret-string "postgresql://postgres:PASSWORD@PROJECT-ID.supabase.co:5432/postgres?sslmode=require"
+aws ssm put-parameter \
+  --name "/axiorapulse/production/DATABASE_URL" \
+  --value "postgresql+psycopg2://postgres:PASSWORD@ENDPOINT:5432/postgres" \
+  --type "SecureString"
 
 # Store SECRET_KEY
-aws secretsmanager create-secret \
-  --name axiora-secret-key \
-  --secret-string "your-super-secret-production-key"
-
-# Store API keys
-aws secretsmanager create-secret \
-  --name openai-key \
-  --secret-string "sk-your-key"
+aws ssm put-parameter \
+  --name "/axiorapulse/production/SECRET_KEY" \
+  --value "your-super-secret-production-key" \
+  --type "SecureString"
 ```
 
 ### Register task definition
@@ -197,7 +138,7 @@ on:
       - main
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-south-1
   ECR_REPOSITORY: axiora-backend
 
 jobs:
@@ -251,7 +192,7 @@ docker-compose up
 - GitHub Actions builds image
 - Image pushed to ECR
 - ECS automatically deploys
-- Connects to Supabase database
+- Connects to AWS Aurora/RDS database
 
 ---
 
@@ -259,9 +200,9 @@ docker-compose up
 
 | Aspect | Local | Production |
 |--------|-------|-----------|
-| **Database** | PostgreSQL in docker-compose | Supabase (external) |
+| **Database** | PostgreSQL in docker-compose | AWS Aurora/RDS (external) |
 | **Image** | Dockerfile (dev friendly) | Dockerfile.prod (optimized) |
-| **Environment** | .env.local | AWS Secrets Manager |
+| **Environment** | .env.local | AWS SSM Parameter Store |
 | **Deployment** | `docker-compose up` | ECS Service |
 | **Scaling** | Manual | Auto-scaling via ECS |
 | **Monitoring** | Local logs | CloudWatch logs |
@@ -270,17 +211,17 @@ docker-compose up
 
 ## Troubleshooting
 
-### Backend can't connect to Supabase
-- Check DATABASE_URL in Secrets Manager
-- Verify SSL mode is `require`
-- Check security group allows outbound HTTPS
+### Backend can't connect to Database
+- Check DATABASE_URL in SSM Parameter Store
+- Verify security group allows outbound/inbound on port 5432
+- Check if database is in a public or private subnet
 
 ### ECS task keeps failing
-- Check CloudWatch logs: `/ecs/axiora-backend`
-- Verify secrets are accessible by task role
+- Check CloudWatch logs: `/ecs/pulse-backend`
+- Verify secrets are accessible by task role (check IAM policy)
 - Check health check endpoint at `/health`
 
 ### Database migration fails
 - Run migrations before deploying: `alembic upgrade head`
-- Check Supabase has correct schema
+- Check Aurora/RDS has correct schema
 - Verify DATABASE_URL permissions

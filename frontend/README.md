@@ -21,9 +21,9 @@ A beautiful, multi-tenant SaaS survey platform built with React, Supabase, and T
 |-------|-----------|
 | Frontend | React 18, Vite, Tailwind CSS 3 |
 | State | Zustand |
-| Backend | Supabase (PostgreSQL + Auth + RLS) |
-| Charts | Chart.js + react-chartjs-2 |
-| Hosting | Netlify (+ serverless functions) |
+| Backend | FastAPI (Python) + PostgreSQL |
+| Database | AWS Aurora/RDS (Production) |
+| Hosting | AWS ECS Fargate + CloudFront |
 | Routing | React Router v6 |
 
 ## Project Structure
@@ -72,56 +72,33 @@ nexora-pulse/
 
 ## Setup Guide
 
-### 1. Supabase Setup
-
-1. Go to [supabase.com](https://supabase.com) → **New Project**
-2. Open **SQL Editor** → paste and run `supabase/schema.sql`
-3. Go to **Authentication** → **Settings** → Enable email sign-ups
-4. Copy from **Project Settings → API**:
-   - `Project URL` → `VITE_SUPABASE_URL`
-   - `anon public key` → `VITE_SUPABASE_ANON_KEY`
-   - `service_role key` → `SUPABASE_SERVICE_ROLE_KEY`
+### 1. Backend Setup
+The frontend depends on the FastAPI backend. Follow the instructions in `backend/README.md` to get it running.
 
 ### 2. Local Development
 
 ```bash
 # Clone the repo
-git clone https://github.com/axiora-core-tech/nexora-pulse.git
-cd nexora-pulse
+cd frontend
 
 # Install dependencies
 npm install
 
 # Copy environment file
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Set VITE_API_BASE_URL to http://localhost:8000
 
 # Start development server
 npm run dev
 ```
 
-For Netlify functions locally, install Netlify CLI:
+### 3. Deploy to AWS
+Deployment is handled automatically via GitHub Actions. 
+- **Frontend:** Deployed to ECS Fargate and served via CloudFront.
+- **Backend:** Deployed to ECS Fargate.
+- **Database:** AWS Aurora/RDS.
 
-```bash
-npm i -g netlify-cli
-netlify dev
-```
-
-### 3. Deploy to Netlify
-
-1. Push to GitHub
-2. Go to [Netlify Dashboard](https://app.netlify.com) → **Add new site → Import from GitHub**
-3. Select your repo; build settings auto-detected from `netlify.toml`
-4. Add **Environment Variables** in Site Settings:
-
-| Variable | Value |
-|----------|-------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase service role key |
-| `VITE_APP_URL` | Your Netlify site URL |
-
-5. **Deploy!**
+See `AWS_SETUP.md` for infrastructure details.
 
 ### 4. First Admin User
 
