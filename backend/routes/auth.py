@@ -8,8 +8,7 @@ from db.database import get_db
 from db.models import Tenant, UserProfile, RoleEnum
 from schemas import (
     RegisterRequest, LoginRequest, AuthResponse, MeResponse,
-    UserProfileOut, TenantOut, UserProfileUpdate, PasswordUpdate,
-    MessageResponse
+    UserProfileOut, TenantOut, UserProfileUpdate, PasswordUpdate
 )
 from auth_utils import (
     hash_password, verify_password,
@@ -58,18 +57,33 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
 
         tenant_name = body.tenant_name
         tenant_slug = body.tenant_slug or _slugify(body.tenant_name)
+
+        tenant = db.query(Tenant).filter(Tenant.slug == tenant_slug).first()
+
+        if tenant:
+            raise HTTPException(400, "Organization already exists")
+
+        tenant = Tenant(
+            id=uuid.uuid4(),
+            name=tenant_name,
+            slug=tenant_slug,
+        )
+        db.add(tenant)
+        db.flush()
+
     else:
-        tenant_name = "Individual Users"
         tenant_slug = "individual-users"
 
-    tenant = Tenant(
-        id=uuid.uuid4(),
-        name=tenant_name,
-        slug=tenant_slug,
-    )
+        tenant = db.query(Tenant).filter(Tenant.slug == tenant_slug).first()
 
-    db.add(tenant)
-    db.flush()
+        if not tenant:
+            tenant = Tenant(
+                id=uuid.uuid4(),
+                name="Individual Users",
+                slug=tenant_slug,
+            )
+            db.add(tenant)
+            db.flush()
 
     user = UserProfile(
         id=uuid.uuid4(),
