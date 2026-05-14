@@ -1,24 +1,37 @@
 #!/bin/bash
 
-# Check if we're running in local mode (db service available) or production (Supabase)
-# DATABASE_URL should be set via environment
-if [[ "$DATABASE_URL" == *"localhost"* ]] || [[ "$DATABASE_URL" == *"db:"* ]]; then
-    echo "Waiting for local database..."
-    python -c "
+# DATABASE_URL should be set via environment (SSM in production)
+echo "Waiting for database connection..."
+
+python -c "
 import time
 import psycopg2
-while True:
+import os
+import sys
+
+db_url = os.getenv('DATABASE_URL')
+if not db_url:
+    print('Error: DATABASE_URL environment variable is not set.')
+    sys.exit(1)
+
+# Robust retry loop (max 60 seconds)
+retries = 0
+while retries < 60:
     try:
-        conn = psycopg2.connect('$DATABASE_URL')
+        conn = psycopg2.connect(db_url)
         conn.close()
-        break
-    except:
+        print('Database connection established!')
+        sys.exit(0)
+    except Exception as e:
+        retries += 1
         time.sleep(1)
+print(f'Error: Could not connect to database after 60 seconds. {e}')
+sys.exit(1)
 "
-    echo "Local database is ready!"
-else
-    echo "Connecting to production database (Supabase)..."
-    sleep 2  # Give Supabase connection time to establish
+
+if [ $? -ne 0 ]; then
+    echo "Database connection failed. Exiting."
+    exit 1
 fi
 
 # Run Alembic migrations

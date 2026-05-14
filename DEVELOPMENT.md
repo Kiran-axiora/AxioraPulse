@@ -19,29 +19,29 @@ docker-compose up
 
 ---
 
-## 🏗️ PRODUCTION BUILD (ECR + ECS + Supabase)
+## 🏗️ PRODUCTION BUILD (ECR + ECS + Aurora/RDS)
 
 ### Build for Production
 ```bash
 # Build using optimized multi-stage Dockerfile
 docker build -f backend/Dockerfile.prod -t axiora-backend:latest ./backend
 
-# Run locally to test (requires Supabase DATABASE_URL set)
+# Run locally to test (requires production-like DATABASE_URL set)
 docker run -e DATABASE_URL="postgresql://..." axiora-backend:latest
 ```
 
 ### Deploy to ECR
 ```bash
 # 1. Authenticate with ECR
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com
+aws ecr get-login-password --region ap-south-1 | \
+  docker login --username AWS --password-stdin 217757579310.dkr.ecr.ap-south-1.amazonaws.com
 
 # 2. Tag image
 docker tag axiora-backend:latest \
-  YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/axiora-backend:latest
+  217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora-backend:latest
 
 # 3. Push to ECR
-docker push YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/axiora-backend:latest
+docker push 217757579310.dkr.ecr.ap-south-1.amazonaws.com/axiora-backend:latest
 
 # 4. Update ECS (auto-deploy via CI/CD in main branch)
 ```
@@ -57,9 +57,9 @@ SECRET_KEY=dev-key-change-in-prod
 ENVIRONMENT=development
 ```
 
-### Production (AWS Secrets Manager)
+### Production (AWS SSM Parameter Store)
 ```bash
-DATABASE_URL=postgresql://postgres:PASSWORD@PROJECT.supabase.co:5432/postgres
+DATABASE_URL=postgresql+psycopg2://[user]:[password]@[aurora-endpoint]:5432/[dbname]
 SECRET_KEY=production-secret-key-min-32-chars
 ENVIRONMENT=production
 ```
@@ -122,11 +122,11 @@ curl http://localhost:8000/health
 - Data persists in `postgres_data` volume
 - Schema auto-created on startup
 
-### Production (Supabase)
-- External managed database
-- Backend connects via connection string
+### Production (AWS Aurora/RDS)
+- External managed database in AWS
+- Backend connects via connection string (SSM)
 - Migrations run automatically in ECS task
-- Backups managed by Supabase
+- Backups and scaling managed by AWS RDS/Aurora
 
 ---
 
