@@ -202,10 +202,10 @@ async def upload_from_drive(
 
         # Handle Google Docs formats by exporting them as PDF
         is_google_doc = body.mimeType.startswith("application/vnd.google-apps.")
-        
+
         file_id = str(uuid.uuid4())
         ext = os.path.splitext(body.filename)[1]
-        
+
         # If it's a Google Doc (Doc, Sheet, Slide), export as PDF
         content_type = body.mimeType
         if is_google_doc:
@@ -215,7 +215,7 @@ async def upload_from_drive(
                 export_mime = "application/pdf"
             else:
                 export_mime = "application/pdf"
-            
+
             drive_request = service.files().export_media(fileId=body.fileId, mimeType=export_mime)
             ext = ".pdf"
             content_type = "application/pdf"
@@ -230,7 +230,7 @@ async def upload_from_drive(
         done = False
         while done is False:
             status, done = downloader.next_chunk()
-        
+
         contents = fh.getvalue()
         if len(contents) > 15 * 1024 * 1024:  # 15 MB limit for Drive
             raise HTTPException(status_code=400, detail="File too large (max 15 MB)")

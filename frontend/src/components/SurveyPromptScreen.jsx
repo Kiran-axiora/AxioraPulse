@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import useDrivePicker from 'react-google-drive-picker';
 import API from '../api/axios';
 
-const SURVEY_MODES = [
+export const SURVEY_MODES = [
   { id: 'conversational', label: 'Conversational', icon: '💬', desc: 'Warm, friendly, natural dialogue style' },
   { id: 'emotionally_triggering', label: 'Emotionally Triggering', icon: '💗', desc: 'Evocative language that probes deeper feelings' },
   { id: 'deep_analysis', label: 'Deep Analysis', icon: '🔬', desc: 'Thorough, multi-layered research questions' },
@@ -13,6 +13,16 @@ const SURVEY_MODES = [
   { id: 'business_feedback', label: 'Business Feedback', icon: '📊', desc: 'Customer/stakeholder ROI-focused' },
   { id: 'custom', label: 'Custom', icon: '✨', desc: 'Flexible, adapts to your description' },
 ];
+
+export const getSurveyModeLabel = mode => ({
+  conversational: 'Conversational Survey',
+  emotionally_triggering: 'Emotionally Triggering Survey',
+  deep_analysis: 'Deep Analysis Survey',
+  professional: 'Professional Survey',
+  employee_feedback: 'Employee Feedback Survey',
+  business_feedback: 'Business Feedback Survey',
+  custom: 'Custom Survey Mode',
+}[mode?.id] || mode?.label || 'Conversational Survey');
 
 const QUICK_TEMPLATES = [
   { name: 'NPS Survey', icon: '📊', category: 'Customer' },
@@ -26,6 +36,7 @@ const QUICK_TEMPLATES = [
 export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate, galleryTemplates, aiGenerating, initialData }) {
   const [prompt, setPrompt] = useState('');
   const [selectedMode, setSelectedMode] = useState(SURVEY_MODES[0]);
+  const [customInstruction, setCustomInstruction] = useState('');
   const [modeOpen, setModeOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
@@ -104,6 +115,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
       setPrompt(initialData.prompt || '');
       const mode = SURVEY_MODES.find(m => m.id === initialData.mode) || SURVEY_MODES[0];
       setSelectedMode(mode);
+      setCustomInstruction(initialData.customInstruction || '');
       setDraftId(initialData.id);
 
       // Load attachments metadata
@@ -167,6 +179,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
         draft_id: draftId,
         prompt: prompt,
         mode: selectedMode.id,
+        custom_instruction: customInstruction,
         attachments: [...attachedFiles, ...attachedAudio].map(f => f.filename),
       });
       if (data.id && !draftId) setDraftId(data.id);
@@ -175,7 +188,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
     } catch {
       // Silent fail for auto-save
     }
-  }, [prompt, selectedMode, attachedFiles, attachedAudio, draftId]);
+  }, [prompt, selectedMode, customInstruction, attachedFiles, attachedAudio, draftId]);
 
   useEffect(() => {
     clearTimeout(autoSaveTimer.current);
@@ -183,7 +196,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
       autoSaveTimer.current = setTimeout(doAutoSave, 3000);
     }
     return () => clearTimeout(autoSaveTimer.current);
-  }, [prompt, selectedMode, attachedFiles, attachedAudio, doAutoSave]);
+  }, [prompt, selectedMode, customInstruction, attachedFiles, attachedAudio, doAutoSave]);
 
   // ── File Upload Handler ──
   const handleFileUpload = async (e) => {
@@ -263,11 +276,12 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
   const handleSubmit = () => {
     const hasAttachments = attachedFiles.length > 0 || attachedAudio.length > 0;
     if (!prompt.trim() && !hasAttachments) return toast.error('Describe what you want to research or attach a file');
+    if (selectedMode.id === 'custom' && !customInstruction.trim()) return toast.error('Add custom mode instructions first');
     const fileContext = attachedFiles.map(f => f.extractedText).filter(Boolean).join('\n\n');
     const audioContext = attachedAudio.map(f => f.extractedText).filter(Boolean).join('\n\n');
-    
+
     const finalPrompt = prompt.trim() || "Please generate a comprehensive survey based on the provided documents.";
-    onGenerate(finalPrompt, finalPrompt, selectedMode.id, fileContext, audioContext);
+    onGenerate(finalPrompt, finalPrompt, selectedMode.id, fileContext, audioContext, customInstruction);
   };
 
   const handleKeyDown = (e) => {
@@ -286,6 +300,8 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
 
   return (
     <div className="cp-center">
+      <div className="idea-protection-badge">Confidentiality Protected by Axiora Pulse</div>
+
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt,image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
       <input ref={audioInputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleAudioUpload} />
@@ -374,11 +390,11 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
 
               {uploadOpen && (
                 <div className="cp-mode-dropdown" style={{ minWidth: '220px', bottom: 'calc(100% + 8px)', left: 0, padding: '8px' }}>
-                  
+
                   {/* My Folder (Expandable) */}
-                  <button 
-                    type="button" 
-                    className={`cp-mode-option${myFolderView ? ' active' : ''}`} 
+                  <button
+                    type="button"
+                    className={`cp-mode-option${myFolderView ? ' active' : ''}`}
                     onClick={(e) => { e.stopPropagation(); setMyFolderView(!myFolderView); }}
                   >
                     <div className="cp-mode-icon">📁</div>
@@ -471,7 +487,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
                 onClick={() => setModeOpen(o => !o)}
               >
                 <span>{selectedMode.icon}</span>
-                <span>{selectedMode.label}</span>
+                <span>{getSurveyModeLabel(selectedMode)}</span>
                 <svg className="cp-chevron" width="8" height="5" viewBox="0 0 8 5" fill="currentColor">
                   <path d="M0 0l4 5 4-5z" />
                 </svg>
@@ -487,7 +503,7 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
                     >
                       <div className="cp-mode-icon">{mode.icon}</div>
                       <div className="cp-mode-option-text">
-                        <div>{mode.label}</div>
+                        <div>{getSurveyModeLabel(mode)}</div>
                         <div className="cp-mode-option-desc">{mode.desc}</div>
                       </div>
                       {selectedMode.id === mode.id && (
@@ -545,6 +561,18 @@ export default function SurveyPromptScreen({ onGenerate, onSkip, onLoadTemplate,
               )}
             </button>
           </div>
+
+          {selectedMode.id === 'custom' && (
+            <div className="cp-custom-mode">
+              <textarea
+                value={customInstruction}
+                onChange={e => setCustomInstruction(e.target.value)}
+                placeholder="Describe the tone, depth, question style, engagement level, or structure you want..."
+                rows={2}
+                disabled={aiGenerating}
+              />
+            </div>
+          )}
         </div>
       </div>
 
