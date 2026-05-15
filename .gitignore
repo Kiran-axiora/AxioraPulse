@@ -76,3 +76,10 @@ Icon?
 *.log
 tmp/
 temp/
+
+# --- Local Scripts & Dev State ---
+scripts/
+.backend.pid
+.backend.log
+.frontend.pid
+.frontend.log
