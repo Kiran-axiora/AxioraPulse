@@ -29,7 +29,7 @@ class AIInsightsResponse(BaseModel):
 class AISuggestionItem(BaseModel):
     text: str
     type: str # question_type
-    options: Optional[List[Dict[str, Any]]] = None
+    options: Optional[Any] = None
     rationale: Optional[str] = None
 
 class AISuggestionsRequest(BaseModel):
@@ -44,11 +44,13 @@ class AISuggestionsResponse(BaseModel):
 class AIGeneratedQuestionItem(BaseModel):
     text: str
     type: str
-    options: Optional[List[Dict[str, Any]]] = None
+    options: Optional[Any] = None
 
 class AIGenerateRequest(BaseModel):
     aiContext: str
     mode: Optional[str] = "conversational"
+    targetAudience: Optional[str] = None
+    engagementGoals: Optional[str] = None
     fileContext: Optional[str] = None
     audioContext: Optional[str] = None
 
