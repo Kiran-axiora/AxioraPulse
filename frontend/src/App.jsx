@@ -49,13 +49,14 @@ function GlobalSpinner() {
 }
 
 function AppRoutes() {
-  const { initialize, initialized, user } = useAuthStore();
-  
+  const { initialize, initialized, user, profile } = useAuthStore();
+
   useEffect(() => {
     initialize();
   }, [initialize]);
 
   const isAuth = !!user;
+  const canAccessDashboard = isAuth && profile?.is_internal;
 
   // Show nothing while initializing if a token exists
   if (!initialized && localStorage.getItem('token')) {
@@ -112,7 +113,7 @@ function AppRoutes() {
         {/* <Route path="/" element={initialized && user ? <Navigate to="/dashboard" replace /> : <LandingPage />} /> */}
         <Route
           path="/"
-          element={isAuth ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+          element={canAccessDashboard ? <Navigate to="/dashboard" replace /> : <LandingPage />}
         />
         <Route path="/coming-soon" element={<ComingSoon />} />
         <Route path="/login" element={isAuth ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
